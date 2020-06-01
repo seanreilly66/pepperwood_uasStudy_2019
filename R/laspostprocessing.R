@@ -7,7 +7,7 @@
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 14 Nov 2019
-# Last commit: 29 May 2019
+# Last commit: 1 June 2019
 #
 # This file created as part of 2019 Pepperwood UAS study
 #
@@ -15,22 +15,24 @@
 #
 # Description:
 #
-# Merges Pix4D las point cloud and multispectral data and clips to given boundary. 
-# Spectral is converted to 16-Bit by rescaling by 10000. Also computes NDVI and adds
-# to las. Function loads all data from file, user does not load into memory before 
-# calling function. Designed to work with five bands of spectral data from a 
-# Micasence RedEdge sensor. Returns las file with associated spectral data. Writes 
-# las to file if filename is specified.
+# Merges Pix4D las point cloud and multispectral data, reprojects data if given,
+# and clips to given boundary. Spectral is converted to 16-Bit by rescaling by 
+# 10000. Also computes NDVI and adds to las. Function loads all data from file, 
+# user does not load into memory before calling function. Designed to work with 
+# five bands of spectral data from a Micasence RedEdge sensor. Returns las file 
+# with associated spectral data. Writes las to file if filename is given. Ignore
+# warning about files having different attribute 0.
 #
 # ===============================================================================
 # 
 # User inputs:
 #
-# las_file = raw pix4d .las or .lax point cloud file name (.las faster operation)
+# las_file = raw pix4d .las or .laz point cloud file name (.las faster operation)
 # spectral_stack = raw pix4d spectral reflectance .tif file names as character vector.
 #     Expects five  bands from micasense rededge-mx
 # boundary = ROI shapefile
-# outfile = OPTIONAL, las output file name
+# crs_projection = OPTIONAL. New projection, input must be PROJ.4 projection arguement.
+# las_out = OPTIONAL. las output file name
 #
 # ===============================================================================
 #
@@ -41,26 +43,23 @@
 # any of these color names or will fail/produce erroneous result.
 # Example: 'data/spectral/ppwd_uas_z5_blue.tif'
 # 
+# Pepperwood projection: 
+#   +proj=utm +zone=10 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"
+# 
 # ===============================================================================
 # 
 # Package dependences: 
 #
-# sp, raster, rgdal, rgeos, lidR, tidyverse, glue, magrittr
+# sp, raster, rgdal, lidR, tidyverse
 # 
 # ===============================================================================
 
 suppressPackageStartupMessages(library('lidR'))
-suppressPackageStartupMessages(library('rgdal'))
 suppressPackageStartupMessages(library('tidyverse'))
-suppressPackageStartupMessages(library('glue'))
-suppressPackageStartupMessages(library('magrittr'))
 
+laspostprocessing <- function(las_file, spectral_file, boundary, crs_projection = NULL, las_out = NULL) {
 
-laspostprocessing <- function(las_file, spectral_file, crs_projection, boundary, las_out = NULL) {
-
-# ===============================================================================  
 # ============= Convert spectral rasters to 16 bit and compute NDVI ============= 
-# ===============================================================================
   
   if (sum(str_detect(spectral_file, 'red(?!e)|green|blue|rededge|nir')) != 5) {
     stop('Incorrect spectral file band name. See documentation for details.', call. = FALSE)
@@ -81,10 +80,8 @@ laspostprocessing <- function(las_file, spectral_file, crs_projection, boundary,
   names(spectral) <- c('r','g','b','re','nir')
   
   spectral$ndvi <- (spectral$nir - spectral$r)/(spectral$nir + spectral$r)
-    
-# ===============================================================================
+  
 # ====================== Add spectral bands to las catalog ======================
-# ===============================================================================
   
   las <- readLAScatalog(las_file)
   
@@ -97,9 +94,9 @@ laspostprocessing <- function(las_file, spectral_file, crs_projection, boundary,
   ctgmergespatial = function(cluster) {
     
     las <- readLAS(cluster) 
-    if (is.empty(las)) return(NULL)
+    if (is.empty(las)) {return(NULL)}
     
-    las %<>% 
+    las <- las %>%
       lasfilterduplicates() %>%
       lasmergespatial(stack(
         spectral$r,
@@ -122,12 +119,13 @@ laspostprocessing <- function(las_file, spectral_file, crs_projection, boundary,
       lasaddextrabytes(name = 'N', desc = 'NIR') %>%
       lasaddextrabytes(name = 'NDVI', desc = 'NDVI')
     
-    las %<>%
+    las <- las %>%
       lasfilterduplicates() %>%
       lasfilter(!(is.na(R)|is.na(G)|is.na(B)|is.na(RE)|is.na(N)|is.na(NDVI)))
     
-    las %<>% 
-      lastransform(crs_projection)
+    if (!is.null(crs_projection)) {
+      las <- lastransform(las, crs_projection)
+    }
 
     return(las)
   }
@@ -136,16 +134,14 @@ laspostprocessing <- function(las_file, spectral_file, crs_projection, boundary,
   
   las <- catalog_apply(las, ctgmergespatial)
   
-# ===============================================================================
 # =========================== Clip lascatalog to ROI ============================
-# ===============================================================================
     
   las <- readLAScatalog(unlist(las))
   
   opt_select(las) <- "0RGB"
   opt_chunk_buffer(las) <- 0
   
-  shp <- readOGR(boundary, verbose = FALSE)
+  shp <- rgdal::readOGR(boundary, verbose = FALSE)
   shp <- spTransform(shp, projection(las))
   shp <- raster::intersect(shp, las) %>%
     buffer(width = 1, dissolve = TRUE)
@@ -153,14 +149,11 @@ laspostprocessing <- function(las_file, spectral_file, crs_projection, boundary,
   
   las <- suppressWarnings(lasclip(las, shp))
   
-# ===============================================================================
 # ============================== Write las to file ==============================
-# ===============================================================================
   
-  if (is.null(las_out)) {
-    return(las)
-  } else {
+  if (!is.null(las_out)) {
     writeLAS(las, las_out)
-    return(las)
   }
+  
+  return(las)
 }
