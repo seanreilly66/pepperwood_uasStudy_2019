@@ -16,7 +16,7 @@
 # Description:
 #
 # Performs a spatial transformation on a las point cloud based on given transformation 
-# matrix. The main purpose of this function is to apply a transformation matrix to
+# matrix. The main utility of this function is to apply a transformation matrix to
 # register one las data source to another. This can be computed using external
 # software such as Lidar360. Function takes in a las file name (not loaded into memory) 
 # and a 4x4 transformation matrix as specified below. Writes las to file if filename 
@@ -63,7 +63,7 @@
 # 
 # Package dependences: 
 #
-# sp, raster, rgdal, rgeos, lidR, tidyverse, glue, magrittr
+# lidR, tidyverse
 # 
 # ===============================================================================
 
