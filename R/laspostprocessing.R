@@ -1,0 +1,166 @@
+# ===============================================================================
+#
+# Las file post-processing for MicaSense RedEdge-MX
+#
+# ===============================================================================
+#
+# Author: Sean Reilly, sean.reilly66@gmail.com
+#
+# Created: 14 Nov 2019
+# Last commit: 29 May 2019
+#
+# This file created as part of 2019 Pepperwood UAS study
+#
+# ===============================================================================
+#
+# Description:
+#
+# Merges Pix4D las point cloud and multispectral data and clips to given boundary. 
+# Spectral is converted to 16-Bit by rescaling by 10000. Also computes NDVI and adds
+# to las. Function loads all data from file, user does not load into memory before 
+# calling function. Designed to work with five bands of spectral data from a 
+# Micasence RedEdge sensor. Returns las file with associated spectral data. Writes 
+# las to file if filename is specified.
+#
+# ===============================================================================
+# 
+# User inputs:
+#
+# las_file = raw pix4d .las or .lax point cloud file name (.las faster operation)
+# spectral_stack = raw pix4d spectral reflectance .tif file names as character vector.
+#     Expects five  bands from micasense rededge-mx
+# boundary = ROI shapefile
+# outfile = OPTIONAL, las output file name
+#
+# ===============================================================================
+#
+# Input file name requirements:
+#
+# Spectral .tif file names must include exact color band name: blue, green, red, rededge, nir. 
+# Colors must be lower case and spelled out correctly. File path cannot contain
+# any of these color names or will fail/produce erroneous result.
+# Example: 'data/spectral/ppwd_uas_z5_blue.tif'
+# 
+# ===============================================================================
+# 
+# Package dependences: 
+#
+# sp, raster, rgdal, rgeos, lidR, tidyverse, glue, magrittr
+# 
+# ===============================================================================
+
+suppressPackageStartupMessages(library('lidR'))
+suppressPackageStartupMessages(library('rgdal'))
+suppressPackageStartupMessages(library('tidyverse'))
+suppressPackageStartupMessages(library('glue'))
+suppressPackageStartupMessages(library('magrittr'))
+
+
+laspostprocessing <- function(las_file, spectral_file, crs_projection, boundary, las_out = NULL) {
+
+# ===============================================================================  
+# ============= Convert spectral rasters to 16 bit and compute NDVI ============= 
+# ===============================================================================
+  
+  if (sum(str_detect(spectral_file, 'red(?!e)|green|blue|rededge|nir')) != 5) {
+    stop('Incorrect spectral file band name. See documentation for details.', call. = FALSE)
+  }
+  
+  raster_to_16bit <- function(spectral_file, band) {
+    str_subset(spectral_file, band) %>%
+      raster(bands = 1) %>%
+      calc(function(x) {round(x * 10000)})
+  }
+  
+  spectral <- stack(raster_to_16bit(spectral_file, 'red(?!e)'),
+                    raster_to_16bit(spectral_file, 'green'),
+                    raster_to_16bit(spectral_file, 'blue'),
+                    raster_to_16bit(spectral_file, 'rededge'),
+                    raster_to_16bit(spectral_file, 'nir')
+                    )
+  names(spectral) <- c('r','g','b','re','nir')
+  
+  spectral$ndvi <- (spectral$nir - spectral$r)/(spectral$nir + spectral$r)
+    
+# ===============================================================================
+# ====================== Add spectral bands to las catalog ======================
+# ===============================================================================
+  
+  las <- readLAScatalog(las_file)
+  
+  opt_chunk_size(las) <- 250
+  opt_chunk_buffer(las) <- 0
+  opt_select(las) <- ''
+  opt_chunk_alignment(las) <- extent(las)[c(1,3)]
+  opt_output_files(las) <- paste0(tempdir(),'\\addBands_{ID}')
+  
+  ctgmergespatial = function(cluster) {
+    
+    las <- readLAS(cluster) 
+    if (is.empty(las)) return(NULL)
+    
+    las %<>% 
+      lasfilterduplicates() %>%
+      lasmergespatial(stack(
+        spectral$r,
+        spectral$g,
+        spectral$b
+      )) %>%
+      lasmergespatial(
+        spectral$re, 
+        attribute = 'RE'
+      ) %>%
+      lasmergespatial(
+        spectral$nir,
+        attribute = 'N'
+      ) %>%
+      lasmergespatial(
+        spectral$ndvi,
+        attribute = 'NDVI'
+      ) %>%
+      lasaddextrabytes(name = 'RE', desc = 'RedEdge') %>%
+      lasaddextrabytes(name = 'N', desc = 'NIR') %>%
+      lasaddextrabytes(name = 'NDVI', desc = 'NDVI')
+    
+    las %<>%
+      lasfilterduplicates() %>%
+      lasfilter(!(is.na(R)|is.na(G)|is.na(B)|is.na(RE)|is.na(N)|is.na(NDVI)))
+    
+    las %<>% 
+      lastransform(crs_projection)
+
+    return(las)
+  }
+
+  options(future.globals.maxSize = 6291456000) # Increase to accodomate size of spectral stack 
+  
+  las <- catalog_apply(las, ctgmergespatial)
+  
+# ===============================================================================
+# =========================== Clip lascatalog to ROI ============================
+# ===============================================================================
+    
+  las <- readLAScatalog(unlist(las))
+  
+  opt_select(las) <- "0RGB"
+  opt_chunk_buffer(las) <- 0
+  
+  shp <- readOGR(boundary, verbose = FALSE)
+  shp <- spTransform(shp, projection(las))
+  shp <- raster::intersect(shp, las) %>%
+    buffer(width = 1, dissolve = TRUE)
+  
+  
+  las <- suppressWarnings(lasclip(las, shp))
+  
+# ===============================================================================
+# ============================== Write las to file ==============================
+# ===============================================================================
+  
+  if (is.null(las_out)) {
+    return(las)
+  } else {
+    writeLAS(las, las_out)
+    return(las)
+  }
+}
