@@ -141,11 +141,10 @@ laspostprocessing <- function(las_file, spectral_file, boundary, crs_projection 
   opt_select(las) <- "0RGB"
   opt_chunk_buffer(las) <- 0
   
-  shp <- rgdal::readOGR(boundary, verbose = FALSE)
-  shp <- spTransform(shp, projection(las))
-  shp <- raster::intersect(shp, las) %>%
+  shp <- rgdal::readOGR(boundary, verbose = FALSE) %>%
+    spTransform(projection(las)) %>%
+    raster::intersect(las) %>%
     buffer(width = 1, dissolve = TRUE)
-  
   
   las <- suppressWarnings(lasclip(las, shp))
   
