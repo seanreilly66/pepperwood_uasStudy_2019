@@ -114,21 +114,21 @@ suppressPackageStartupMessages(library(glue, lib.loc = lib))
 # ================================= User inputs =================================
 
 zone <- as.integer(readline('zone number: '))
-round <- 2
+round <- 1
 
 las_file <- glue('data/las/uas/ppwd_uas_z{zone}_f2_reg2als.las')
 
-cr_value <- 1
-ct_value <- 0.1
-r_value <- 3
-ts_value <- 0.6
-n_value <- 0.5
+cr_value <- 0.5
+ct_value <- 0.5
+r_value <- 1
+ts_value <- 0.65
+n_value <- 0
 
-cr_testrange <- seq(0.5, 1.1, 0.01)
-ct_testrange <- seq(0, 0.2, 0.01)
-r_testrange <- 3
-ts_testrange <- seq(0.5, 1, 0.01)
-n_testrange <- c(0, seq(0.4, 0.6, 0.01))
+cr_testrange <- seq(0.1, 2.5, 0.1)
+ct_testrange <- seq(0.1, 2.5, 0.1)
+r_testrange <- 1:3
+ts_testrange <- seq(0.1, 2.5,0.1)
+n_testrange <- seq(0, 1, 0.1)
 
 dtm_res <- 1
 
@@ -210,10 +210,13 @@ error_calc <- function(dtm, test_param, standard_dtm, veg_class, roi) {
     summarise(
       'ss_veg' = sum(err^2, na.rm = TRUE),
       'n_veg' = n()
-    ) %>%
-    select('ss_veg','n_veg') %>%
-    add_column(ss_veg_title = glue('ss_veg_class{c(2,3,5:8)}'), .before = 'ss_veg') %>%
-    add_column(n_veg_title = glue('n_veg_class{c(2,3,5:8)}'), .before = 'n_veg')
+    ) 
+  
+  veg_type <- unique(veg_error$veg_class)
+  
+  veg_error <- veg_error %>%
+    add_column(ss_veg_title = glue('ss_veg_class{veg_type}'), .before = 'ss_veg') %>%
+    add_column(n_veg_title = glue('n_veg_class{veg_type}'), .before = 'n_veg')
   
   ss_veg <- veg_error %>%
     select('ss_veg_title', 'ss_veg') %>%
