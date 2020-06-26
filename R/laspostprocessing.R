@@ -51,7 +51,13 @@
 # Package dependences: 
 #
 # sp, raster, rgdal, lidR, tidyverse
-# 
+#
+# ===============================================================================
+#
+# Known problems:
+#
+# Shapefile intersection returns multiple polygons (not just the one of interest)
+#
 # ===============================================================================
 
 suppressPackageStartupMessages(library('lidR'))

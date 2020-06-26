@@ -78,22 +78,92 @@
 # 
 # ===============================================================================
 
-lib = 'r_lib' 
-# lib = NULL # for local use
+# lib = 'r_lib' 
+lib = NULL # for local use
 
 suppressPackageStartupMessages(library(sp, lib.loc = lib))
 suppressPackageStartupMessages(library(raster, lib.loc = lib))
-suppressPackageStartupMessages(library(lazyeval, lib.loc = lib))
-suppressPackageStartupMessages(library(rlas, lib.loc = lib))
-suppressPackageStartupMessages(library(RCSF, lib.loc = lib))
+# suppressPackageStartupMessages(library(lazyeval, lib.loc = lib))
+# suppressPackageStartupMessages(library(rlas, lib.loc = lib))
+# suppressPackageStartupMessages(library(RCSF, lib.loc = lib))
 suppressPackageStartupMessages(library(lidR, lib.loc = lib))
-suppressPackageStartupMessages(library(rgdal, lib.loc = lib))
-suppressPackageStartupMessages(library(rgeos, lib.loc = lib))
-suppressPackageStartupMessages(library(vctrs, lib.loc = lib))
-suppressPackageStartupMessages(library(backports, lib.loc = lib))
-suppressPackageStartupMessages(library(withr, lib.loc = lib))
-suppressPackageStartupMessages(library(rstudioapi, lib.loc = lib))
+# suppressPackageStartupMessages(library(rgdal, lib.loc = lib))
+# suppressPackageStartupMessages(library(rgeos, lib.loc = lib))
+# suppressPackageStartupMessages(library(vctrs, lib.loc = lib))
+# suppressPackageStartupMessages(library(backports, lib.loc = lib))
+# suppressPackageStartupMessages(library(withr, lib.loc = lib))
+# suppressPackageStartupMessages(library(rstudioapi, lib.loc = lib))
 suppressPackageStartupMessages(library(tidyverse, lib.loc = lib))
 suppressPackageStartupMessages(library(glue, lib.loc = lib))
 
 # ================================= User inputs =================================
+
+zone <- 2
+
+uas_las <- glue('data/las/uas/ppwd_uas_z{zone}_f2_hnorm.las')
+als_las <- glue('data/las/als/ppwd_als_z{zone}.las')
+als_dtm <- glue('data/dtm/als/ppwd_als_z{zone}_dtm.tif')
+
+# ================== ALS height normalization and noise filter ==================
+
+ctg_normnoise = function(las_file, noise_sensitivity, dtm) {
+  
+  ctg <- readLAScatalog(las_file)
+  
+  opt_chunk_size(ctg) <- 250
+  opt_chunk_buffer(ctg) <- 30
+  opt_output_files(ctg) <- glue('{tempfile()}_{{ID}}')
+  opt_select(ctg) <- ''
+  
+  normnoise <- function(cluster, sensitivity, dtm) {
+    las <- readLAS(cluster)
+    if (is.empty(las)) return(NULL)
+    
+    las <- lasnormalize(las, dtm, na.rm = TRUE)
+    
+    p95 <- grid_metrics(las, ~quantile(Z, probs = 0.95), 10)
+    las <- lasmergespatial(las, p95, "p95")
+    las <- lasfilter(las, Z < p95*sensitivity)
+    las$p95 <- NULL
+    
+    las <- lasfilter(las, buffer == 0)
+    return(las)
+  }
+  
+  ctg_to_las <- function(cluster) {
+    las <- readLAS(cluster)
+    if (is.empty(las)) return(NULL)
+    return(las)
+  }
+  
+  ctg <- catalog_apply(ctg = ctg, 
+                       FUN = normnoise, 
+                       sensitivity = noise_sensitivity,
+                       dtm = dtm)
+  
+  ctg <- readLAScatalog(unlist(ctg))
+  
+  opt_chunk_buffer(ctg) = 0
+  opt_select(ctg) <- ''
+
+  las <- catalog_sapply(ctg = ctg, 
+                        FUN = ctg_to_las)
+  
+  return(las)
+}
+
+als_las <- ctg_normnoise(las_file = als_las,
+                         noise_sensitivity = 1.2,
+                         dtm = raster(als_dtm))
+
+# ====== Compute als canopy metrics ======
+
+als_grid <- grid_metrics(als_las, .stdmetrics_z)
+rm(als_las, als_dtm)
+gc()
+
+
+# ====== Compute uas canopy metrics =====
+
+uas_las <- readLAS(uas_las, select = '')
+uas_grid <- grid_metrics(uas_las, .stdmetrics_z)
