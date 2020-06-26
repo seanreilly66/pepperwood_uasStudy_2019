@@ -50,7 +50,7 @@
 #     when iterating over the other parameter's ranges. See below for parameter names
 # {parameter}_testrange = Vector of values for each parameter to be iterated over
 # dtm_res = DTM resolution (square meters)
-# standard_dtm = .tif filename of dtm to be used as comparison (e.g. from ALS)
+# standard_dtm = .tif filename of dtm to be used as comparison benchmark (e.g. from ALS)
 # roi = Buffered ROI shapefile to use as focal point for error calculations. Must have
 #     Zone attribute if contains multiple polygons.
 # veg_class = .tif filename of raster containing vegetation classification data
@@ -132,7 +132,7 @@ n_testrange <- seq(0, 1, 0.1)
 
 dtm_res <- 1
 
-standard_dtm <- glue('data/dtm/als/zone/ppwd_als_z{zone}_dtm.tif')
+standard_dtm <- glue('data/dtm/als/ppwd_als_z{zone}_dtm.tif')
 
 roi <- 'data/site_data/zone_shp/ppwd_zones_50mBuffer.shp'
 
@@ -219,13 +219,13 @@ error_calc <- function(dtm, test_param, standard_dtm, veg_class, roi) {
     add_column(n_veg_title = glue('n_veg_class{veg_type}'), .before = 'n_veg')
   
   ss_veg <- veg_error %>%
-    select('ss_veg_title', 'ss_veg') %>%
+    dplyr::select('ss_veg_title', 'ss_veg') %>%
     column_to_rownames('ss_veg_title') %>%
     t() %>%
     as.data.frame()
   
   n_veg <- veg_error %>%
-    select('n_veg_title', 'n_veg') %>%
+    dplyr::select('n_veg_title', 'n_veg') %>%
     column_to_rownames('n_veg_title') %>%
     t() %>%
     as.data.frame()
@@ -267,7 +267,14 @@ veg_class <- raster(veg_class) %>%
 
 # ============================ CSF parameter testing ============================
 
-csf_param_error <- data.frame(matrix(nrow = 0, ncol = 31))
+csf_param_error <- data.frame(matrix(nrow = 0, ncol = 27)) %>%
+  mutate(1, factor())
+
+colnames(csf_param_error) <- c('testing_parameter', 'cloth_resolution', 'class_threshold', 
+  'cloth_rigidness', 'time_step', 'ndvi_filter', 'dtm_cells', 'rmse', 'prcnt_LT2', 'avg', 
+  'stdev', 'range', 'IQR', 'ss_zone', 'n_zone', 'ss_veg_class2', 'ss_veg_class3', 'ss_veg_class5',
+  'ss_veg_class6', 'ss_veg_class7', 'ss_veg_class8', 'n_veg_class2', 'n_veg_class3', 
+  'n_veg_class5', 'n_veg_class6', 'n_veg_class7', 'n_veg_class8')
 
 cr = cr_value
 ct = ct_value
@@ -284,7 +291,7 @@ for(cr in cr_testrange) {
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
   if (!is.null(error_summary)) {
-    csf_param_error <- rbind(csf_param_error, error_summary)
+    csf_param_error <- add_row(csf_param_error, error_summary)
   }
 }
 
@@ -299,7 +306,7 @@ for(ct in ct_testrange) {
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
   if (!is.null(error_summary)) {
-    csf_param_error <- rbind(csf_param_error, error_summary)
+    csf_param_error <- add_row(csf_param_error, error_summary)
   }
 }
 
@@ -314,7 +321,7 @@ for(r in r_testrange) {
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
   if (!is.null(error_summary)) {
-    csf_param_error <- rbind(csf_param_error, error_summary)
+    csf_param_error <- add_row(csf_param_error, error_summary)
   }
 }
 
@@ -329,7 +336,7 @@ for(ts in ts_testrange) {
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
   if (!is.null(error_summary)) {
-    csf_param_error <- rbind(csf_param_error, error_summary)
+    csf_param_error <- add_row(csf_param_error, error_summary)
   }
 }
 
@@ -371,7 +378,7 @@ for(n in n_testrange) {
   
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
   if (!is.null(error_summary)) {
-    csf_param_error <- rbind(csf_param_error, error_summary)
+    csf_param_error <- add_row(csf_param_error, error_summary)
   }
 }
 
