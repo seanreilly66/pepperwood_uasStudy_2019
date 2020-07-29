@@ -7,7 +7,9 @@
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 24 June 2020
-# Last commit: 25 June 2019
+# Last commit: 29 July 2020
+#
+# Status: Functional, see known problems for details
 #
 # This script created as part of 2019 Pepperwood UAS study
 #
@@ -75,18 +77,21 @@
 # 
 # Package dependences: 
 #
-# sp, raster, lazyeval, rgeos, rlas, RCSF, rgdal, lidR, vctrs, backports, withr, 
-# rstudioapi, tidyverse, glue
+# sp, raster, rgdal, lidR, tidyverse, glue
+#
+# Additional packages for linux cluster use:
+#
+# lazyeval, rlas, RCSF, vctrs, backports, withr, rstudioapi
 # 
 # ===============================================================================
 # 
-# Known bugs:
+# Known problems:
 #
 # If a one flight dtm for a zone is not generated due to insufficient ground points
 # (null returned), all subsequent steps will fail. Need to implement a check for 
 # file existence.
 #
-# Could be optimized to run as one for loop, rather than reading a writing to file
+# Could be optimized to run as one for loop, rather than reading and writing to file
 # but intermediate outputs are useful for other purposes and raster read time is
 # short compared to overall function processing time.
 #
@@ -94,10 +99,8 @@
 
 lib = NULL # for local use
 
-suppressPackageStartupMessages(library(lazyeval, lib.loc = lib))
 suppressPackageStartupMessages(library(lidR, lib.loc = lib))
 suppressPackageStartupMessages(library(rgdal, lib.loc = lib))
-# suppressPackageStartupMessages(library(rgeos, lib.loc = lib))
 suppressPackageStartupMessages(library(tidyverse, lib.loc = lib))
 suppressPackageStartupMessages(library(glue, lib.loc = lib))
 
@@ -269,7 +272,7 @@ write.csv(dtm_error, glue('{error_ras_output}/ppwd_uas_f1vf2_errordif.csv'))
 rm('error_ras_output', 'z_error', 'z_veg', 'error_dif', 'f1_error', 'f2_error', 
    'z', 'veg_class', 'zone')
 
-# ===============================================================================
+# ============================ Summarize error =============================
 
 full <- dtm_error %>%
   summarise(
@@ -342,7 +345,6 @@ veg <- dtm_error %>%
                             'Evergreen Broadleaf' = '7',
                             'Conifer' = '8'
                             ))
-
 
 summary <- full %>%
   add_row(zone) %>%
