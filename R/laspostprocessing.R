@@ -7,7 +7,9 @@
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 14 Nov 2019
-# Last commit: 1 June 2019
+# Last commit: 29 July 2020
+#
+# Status: Functional, see known problems for details
 #
 # This file created as part of 2019 Pepperwood UAS study
 #
@@ -22,6 +24,8 @@
 # five bands of spectral data from a Micasence RedEdge sensor. Returns las file 
 # with associated spectral data. Writes las to file if filename is given. Ignore
 # warning about files having different attribute 0.
+#
+# This is a function only for use in other scripts.
 #
 # ===============================================================================
 # 
