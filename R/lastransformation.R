@@ -1,13 +1,15 @@
 # ===============================================================================
 #
-# Las transformation
+# Las matrix transformation
 #
 # ===============================================================================
 #
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 16 Feb 2020
-# Last commit: 1 June 2020
+# Last commit: 29 July 2020
+# 
+# Status: Finalized
 #
 # This file created as part of 2019 Pepperwood UAS study
 #
@@ -65,6 +67,12 @@
 #
 # lidR, tidyverse
 # 
+# ===============================================================================
+#
+# Known problems:
+#
+# none
+#
 # ===============================================================================
 
 suppressPackageStartupMessages(library('lidR'))
