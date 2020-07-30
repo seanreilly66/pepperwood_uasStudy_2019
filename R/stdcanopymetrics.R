@@ -30,7 +30,8 @@
 # zone = Zone number from user prompt. Used in completing filenames for las_file and 
 #    standard_dtm files
 # uas_las = .las or .laz file name (.las faster operation) skeleton (containing
-#   {z} zone glue placeholder) for point cloud from UAS data
+#   {z} zone glue placeholder) for point cloud from UAS data that has been height 
+#   normalized.
 # als_las = .las or .laz file name (.las faster operation) skeleton (containing
 #   {z} zone glue placeholder) for point cloud from ALS data
 # als_dtm = .tif file name (.las faster operation) skeleton (containing {z} zone 
