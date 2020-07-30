@@ -67,6 +67,7 @@
 suppressPackageStartupMessages(library('lidR'))
 suppressPackageStartupMessages(library('tidyverse'))
 
+
 laspostprocessing <- function(las_file, spectral_file, boundary, crs_projection = NULL, las_out = NULL) {
 
 # ============= Convert spectral rasters to 16 bit and compute NDVI ============= 
