@@ -220,7 +220,7 @@ grid_data <- grid_data %>%
 grid_data <- grid_data %>%
   filter_all(all_vars(!is.na(.))) %>%
   filter(veg_class%%1 < 0.25 | veg_class%%1 > 0.75) %>%
-  filter(veg_class >= 6) %>%
+  filter(veg_class >= 5.75) %>%
   filter(rbr_class%%1 < 0.25 | rbr_class%%1 > 0.75) %>%
   mutate_at(c('veg_class', 'rbr_class'), round) %>%
   mutate_at(c('veg_class', 'rbr_class'), as_factor) %>%
@@ -341,7 +341,7 @@ grid_data <- grid_data %>%
 grid_data <- grid_data %>%
   filter_all(all_vars(!is.na(.))) %>%
   filter(veg_class%%1 < 0.25 | veg_class%%1 > 0.75) %>%
-  filter(veg_class >= 6) %>%
+  filter(veg_class >= 5.75) %>%
   filter(rbr_class%%1 < 0.25 | rbr_class%%1 > 0.75) %>%
   mutate_at(c('veg_class', 'rbr_class'), round) %>%
   mutate_at(c('veg_class', 'rbr_class'), as_factor) %>%
@@ -445,3 +445,107 @@ summary(evrgrn_aov)
 TukeyHSD(evrgrn_aov)
 
 rm(decid, decid_aov, evrgrn, evrgrn_aov)
+
+
+# ===============================================================================
+# ===================== Part Four: UAS vs ALS ladder fuels ====================== 
+# ===============================================================================
+
+# ================================ Prep dataset ================================= 
+
+grid_data <- data.table::fread(grid_metrics_file)
+
+grid_data <- grid_data %>%
+  select(uas_ladder_fuel, als_ladder_fuel, veg_class, rbr_class)
+
+grid_data <- grid_data %>%
+  filter_all(all_vars(!is.na(.))) %>%
+  filter(veg_class%%1 < 0.25 | veg_class%%1 > 0.75) %>%
+  filter(veg_class >= 5.75) %>%
+  filter(rbr_class <= 2) %>%
+  filter(rbr_class%%1 < 0.25 | rbr_class%%1 > 0.75) %>%
+  mutate_at(c('veg_class', 'rbr_class'), round) %>%
+  mutate_at(c('veg_class', 'rbr_class'), as_factor) %>%
+  mutate(veg_class = fct_recode(
+    veg_class,
+    'Deciduous Broadleaf' = '6',
+    'Evergreen Broadleaf' = '7',
+    'Conifer' = '8')) %>%
+  mutate(rbr_class = fct_recode(
+    rbr_class,
+    'Unchanged' = '1',
+    'Low' = '2')) %>%
+  group_by(veg_class) %>%
+  sample_n(30) %>%
+  ungroup()
+
+# ======================== Regression by vegetation type ======================== 
+
+cor_conifer <- cor(x = grid_data %>%
+                     filter(veg_class == 'Conifer') %>%
+                     select(uas_ladder_fuel),
+                   y = grid_data %>%
+                     filter(veg_class == 'Conifer') %>%
+                     select(als_ladder_fuel),
+                   method = 'pearson')
+lm_conifer <- lm(als_ladder_fuel ~ uas_ladder_fuel,
+                 data = grid_data %>%
+                   filter(veg_class == 'Conifer'))
+
+cor_decid <- cor(x = grid_data %>%
+                     filter(veg_class == 'Deciduous Broadleaf') %>%
+                     select(uas_ladder_fuel),
+                   y = grid_data %>%
+                     filter(veg_class == 'Deciduous Broadleaf') %>%
+                     select(als_ladder_fuel),
+                   method = 'pearson')
+lm_decid <- lm(als_ladder_fuel ~ uas_ladder_fuel,
+                 data = grid_data %>%
+                   filter(veg_class == 'Deciduous Broadleaf'))
+
+cor_evrgrn <- cor(x = grid_data %>%
+                     filter(veg_class == 'Evergreen Broadleaf') %>%
+                     select(uas_ladder_fuel),
+                   y = grid_data %>%
+                     filter(veg_class == 'Evergreen Broadleaf') %>%
+                     select(als_ladder_fuel),
+                   method = 'pearson')
+lm_evrgrn <- lm(als_ladder_fuel ~ uas_ladder_fuel,
+                 data = grid_data %>%
+                   filter(veg_class == 'Evergreen Broadleaf'))
+
+
+# ================================== Plot data ================================== 
+
+ladder_plot <- ggplot(
+  data = grid_data,
+  mapping = aes(
+    x = uas_ladder_fuel,
+    y = als_ladder_fuel,
+    color = veg_class)) +
+  geom_point() +
+  geom_smooth(method = 'lm', se = FALSE) +
+  labs(
+    x = 'UAS ladder fuel percentage',
+    y = 'ALS ladder fuel percentage') + 
+  ylim(0,1) +
+  xlim(0,1) +
+  scale_color_discrete(
+    name = NULL, 
+    labels = c('Deciduous broadleaf (y = 0.38***x + 0.14**, R = 0.59)', 
+               'Evergreen broadleaf (y = 0.02x + 0.17***, R = 0.07)', 
+               'Conifer (y = 0.00x + 0.13***, R = 0.42)')) +
+  theme(legend.position = c(0.48,0.9))
+
+ladder_plot
+
+ggsave(
+  filename = 'figures/uas-ladder-fuel_vs_als-ladder-fuel.png',
+  width = 6, 
+  height = 6, 
+  units = 'in', 
+  dpi = 400)
+
+# ===============================================================================
+
+
