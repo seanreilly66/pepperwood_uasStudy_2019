@@ -20,8 +20,10 @@
 # Generates tables of regression linear modelling results from grid metrics. First
 # section computes relationship between lidar and uas measurements of metrics from
 # Filippelli et al. (2019). Second section computes impact of Tubbs fire on those
-# metrics determined to have strong correlation in part one. Third section compares
-# ladder fuel metrics.
+# metrics determined to have strong correlation in part one. In this case, it looks
+# at the 95th height percentile before and after the Tubbs fire. Third section 
+# compares ALS ladder fuels to burn severity in the Tubbs fire. Fourth section 
+# looks at ladder fuel metric comparisons between UAS and ALS in unburned forest.
 #
 # ===============================================================================
 # 
@@ -206,9 +208,11 @@ metrics <- lm_low_rbr %>%
   .$metric %>%
   as.character()
 
+rm(lm_low_rbr)
+
 # ================================ Prep dataset ================================= 
 
-grid_data <- data.table::fread('data/grid_metrics/ppwd_hnorm-als_grid-metrics_compiled-data.csv')
+grid_data <- data.table::fread(grid_metrics_file)
 
 grid_data <- grid_data %>%
   select(paste0('uas_', metrics), paste0('als_', metrics), veg_class, rbr_class)
@@ -234,9 +238,7 @@ grid_data <- grid_data %>%
 
 grid_data <- grid_data %>%
   transmute(zmax_dif = als_zmax - uas_zmax,
-         zq75_dif = uas_zq75 - als_zq75,
          zq95_dif = uas_zq95 - als_zq95,
-         zq90_dif = uas_zq90 - als_zq90,
          veg_class = veg_class,
          rbr_class = rbr_class)
 
@@ -251,8 +253,9 @@ evrgrn <- grid_data %>%
   group_by(rbr_class) %>%
   sample_n(30)
 
-# ============================== Plot differences =============================== 
+rm(grid_data, metrics)
 
+# ============================== Plot differences =============================== 
 
 decid_plot <- ggplot(data = decid) +
   geom_boxplot(
@@ -261,7 +264,7 @@ decid_plot <- ggplot(data = decid) +
       y = zq95_dif)) +
   labs(
     x = NULL,
-    y = 'Difference in p95') + 
+    y = 'Difference in p95 (ALS - UAS)') + 
   ylim(-30, 10)
 
 evrgrn_plot <- ggplot(data = evrgrn) +
@@ -280,7 +283,7 @@ fig <- ggarrange(
   nrow = 1, ncol = 2, widths = c(1,0.75),
   labels = list('(a)','(b)'), 
   font.label = list(family = 'serif', size = 16, face = 'plain'), 
-  label.x = c(0.2, 0.06))
+  label.x = c(0.17, 0.06))
 
 fig <- annotate_figure(
   fig, 
@@ -289,12 +292,13 @@ fig <- annotate_figure(
 fig
 
 ggsave(
-  filename = 'figures/rbr_severity_comparison.png',
+  filename = 'figures/tubbs-fire_rbr_vs_dif-p95.png',
   width = 8, 
   height = 4, 
   units = 'in', 
   dpi = 400)
 
+rm(decid_plot, evrgrn_plot, fig)
 
 # ============================ Annova of differences ============================ 
 
@@ -321,15 +325,15 @@ summary(evrgrn_aov)
 
 TukeyHSD(evrgrn_aov)
 
-rm(conifer, decid, decid_aov, evrgrn, evrgrn_plot, fig, grid_data, lm_low_rbr, metrics, decid_plot, evrgrn_aov)
+rm(decid, decid_aov, evrgrn, evrgrn_aov)
 
 # ===============================================================================
-# ========================== Part Three: Ladder fuels =========================== 
+# =================== Part Three: Ladder fuels in Tubbs Fire ==================== 
 # ===============================================================================
 
 # ================================ Prep dataset ================================= 
 
-grid_data <- data.table::fread('data/grid_metrics/ppwd_hnorm-als_grid-metrics_compiled-data.csv')
+grid_data <- data.table::fread(grid_metrics_file)
 
 grid_data <- grid_data %>%
   select(uas_ladder_fuel, als_ladder_fuel, veg_class, rbr_class)
@@ -352,41 +356,92 @@ grid_data <- grid_data %>%
     'Low' = '2',
     'Moderate' = '3',
     'High' = '4'))
-# 
-# grid_data <- grid_data %>%
-#   mutate(ladder_fuel_dif = als_ladder_fuel - uas_ladder_fuel)
-# 
-# decid <- grid_data %>%
-#   filter(veg_class == 'Deciduous Broadleaf') %>%
-#   group_by(rbr_class) %>%
-#   sample_n(30)
-# 
-# evrgrn <- grid_data %>%
-#   filter(veg_class == 'Evergreen Broadleaf') %>%
-#   filter(rbr_class != 'High') %>%
-#   group_by(rbr_class) %>%
-#   sample_n(30)
+
+decid <- grid_data %>%
+  filter(veg_class == 'Deciduous Broadleaf') %>%
+  group_by(rbr_class) %>%
+  sample_n(30)
+
+evrgrn <- grid_data %>%
+  filter(veg_class == 'Evergreen Broadleaf') %>%
+  filter(rbr_class != 'High') %>%
+  group_by(rbr_class) %>%
+  sample_n(30, replace = TRUE)
+
+rm(grid_data)
 
 # =================== Plot ALS ladder fuel with fire severity =================== 
 
-rbr_ladder_plot <- ggplot(data = grid_data) +
+decid_plot <- ggplot(data = decid) +
   geom_boxplot(
     aes(
       x = rbr_class,
       y = als_ladder_fuel)) +
   labs(
-    x = 'RBR Severity',
-    y = 'Ladder fuel percentage')
+    x = NULL,
+    y = 'Ladder fuel percentage') + 
+  ylim(0,1)
 
-rbr_ladder_plot
+decid_plot
+
+evrgrn_plot <- ggplot(data = evrgrn) +
+  geom_boxplot(
+    aes(
+      x = rbr_class,
+      y = als_ladder_fuel)) +
+  labs(
+    x = NULL,
+    y = NULL) + 
+  ylim(0,1) + 
+  theme(axis.text.y = element_blank())
+
+evrgrn_plot
+
+fig <- ggarrange(
+  decid_plot, evrgrn_plot,
+  nrow = 1, ncol = 2, widths = c(1,0.75),
+  labels = list('(a)','(b)'), 
+  font.label = list(family = 'serif', size = 16, face = 'plain'), 
+  label.x = c(0.17, 0.06))
+
+fig <- annotate_figure(
+  fig, 
+  bottom = text_grob('RBR Severity', family = 'serif', size = 16))
+
+fig
 
 ggsave(
-  filename = 'figures/rbr_vs_ladder-fuel.png',
-  width = 6.5,
-  height = 5, 
+  filename = 'figures/tubbs-fire_rbr_vs_als-ladder-fuel.png',
+  width = 8, 
+  height = 4, 
   units = 'in', 
   dpi = 400)
 
+rm(decid_plot, evrgrn_plot, fig)
+
+# ================= ANOVA of ALS ladder fuel with fire severity ================= 
+
+group_by(decid, rbr_class) %>%
+  summarize(
+    n = n(),
+    mean = mean(als_ladder_fuel, na.rm = TRUE),
+    sd = sd(als_ladder_fuel, na.rm = TRUE))
+
+decid_aov <- aov(als_ladder_fuel ~ rbr_class, data = decid)
+summary(decid_aov)
+
+TukeyHSD(decid_aov)
 
 
+group_by(evrgrn, rbr_class) %>%
+  summarize(
+    n = n(),
+    mean = mean(als_ladder_fuel, na.rm = TRUE),
+    sd = sd(als_ladder_fuel, na.rm = TRUE))
 
+evrgrn_aov <- aov(als_ladder_fuel ~ rbr_class, data = evrgrn)
+summary(evrgrn_aov)
+
+TukeyHSD(evrgrn_aov)
+
+rm(decid, decid_aov, evrgrn, evrgrn_aov)
