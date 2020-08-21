@@ -7,9 +7,9 @@
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 16 Aug 2020
-# Last commit: 16 Aug 2020
+# Last commit: 21 Aug 2020
 #
-# Status: Under development
+# Status: Complete
 #
 # This file created as part of 2019 Pepperwood UAS study
 #
@@ -33,13 +33,11 @@
 # veg_file <- Vegetation class file name (containing {z} zone glue placeholder)
 # rbr_file <- Tubbs fire RBR file name (containing {z} zone glue placeholder)
 # topo_file <- Topography file name (containing {z} zone glue placeholder)
+# out_file <- output file name (.csv)
 # 
 # ===============================================================================
 #
-# Vegetation classification raster:
-#
-# Vegetation classification raster should contain integer values 1 through 8 
-# cooresponding to the following vegetation classes:
+# Vegetation classification:
 #   1 = Human (farm, building, vineyard, etc.)
 #   2 = Grassland
 #   3 = Shrubland
@@ -52,9 +50,6 @@
 # ===============================================================================
 #
 # Topography classification raster:
-#
-# Topography classification raster should contain integer values 1 through 6
-# corresponding to the following topography classes:
 #   1 = Valley
 #   2 = Slope
 #   3 = Flat
@@ -66,8 +61,10 @@
 # ===============================================================================
 #
 # Relativized burn ratio classification raster:
-#
-#
+#   1 = Unchanged
+#   2 = Low
+#   3 = Moderate
+#   4 = Severe
 #
 # ===============================================================================
 # 
@@ -79,18 +76,12 @@
 #
 # Known problems:
 #
-# Documentation incomplete
-#
 # ==============================================================================
 
-lib = NULL
-
-library(sp, lib.loc = lib)
-library(raster, lib.loc = lib)
+library(sp)
+library(raster)
 library(tidyverse)
-library(glue, lib.loc = lib)
-
-rm(lib)
+library(glue)
 
 # ================================= User inputs =================================
 
@@ -98,14 +89,14 @@ zone <- c(2:4, 6:13)
 
 grid_file <- 'data/grid_metrics/rasters/'
 
-uas_grid_metric_file <- 'ppwd_uas_z{z}_f2_hnorm-als_grid-metrics'
-als_grid_metric_file <- 'ppwd_als_z{z}_hnorm-als_grid-metrics'
+uas_grid_metric_file <- 'ppwd_uas_z{z}_f2_hnorm-als_grid-metrics_10m-grid'
+als_grid_metric_file <- 'ppwd_als_z{z}_hnorm-als_grid-metrics_10m-grid'
 
 veg_file <- 'data/site_data/veg_class/zone/ppwd_vegclass_z{z}.tif'
 rbr_file <- 'data/site_data/tubbs17_rbr/zone/ppwd_tubbs_rbr_z{z}.tif'
 topo_file <- 'data/site_data/topography/zone/ppwd_topo_z{z}.tif'
 
-
+out_file <- 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_10m-grid_compiled-data.csv'
 
 # ======== Data compilation function ===========
 
@@ -172,4 +163,6 @@ for (z in zone[-1]) {
   
 }
 
-write.csv(compile_data, 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_compiled-data.csv')
+write.csv(compile_data, out_file)
+
+# ==============================================================================
