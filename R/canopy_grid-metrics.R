@@ -7,9 +7,9 @@
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 15 Aug 2020
-# Last commit: 16 Aug 2020
+# Last commit: 21 Aug 2020
 #
-# Status: Functional
+# Status: Complete
 #
 # This file created as part of 2019 Pepperwood UAS study
 #
@@ -32,6 +32,8 @@
 # als_las_file = .las or .laz file name (.las faster operation) skeleton (containing
 #   {z} zone glue placeholder) for point cloud from ALS data height normalized using
 #   ALS dtm.
+# res = grid resolution (meters)
+# out_folder = output folder for grid metric rasters
 # 
 # ===============================================================================
 # 
@@ -43,21 +45,15 @@
 #
 # Known problems:
 #
-# Needs user input for output file location and format (currently hard coded)
-#
 # ===============================================================================
 
-lib = NULL
-
-library(sp, lib.loc = lib)
-library(raster, lib.loc = lib)
-library(lidR, lib.loc = lib)
+library(sp)
+library(raster)
+library(lidR)
 library(tidyverse)
-library(glue, lib.loc = lib)
+library(glue)
 
 set_lidr_threads(0)
-
-rm(lib)
 
 # ================================= User inputs =================================
 
@@ -66,6 +62,10 @@ zone <- c(2:4, 6:13)
 uas_las_file <- 'D:/data/las/uas/processed/ppwd_uas_z{z}_f2_hnorm-als.las'
 
 als_las_file <- 'data/las/als/ppwd_als_z{z}_hnorm-als.las'
+
+res = 10
+
+out_folder <- 'data/grid_metrics/rasters'
 
 # ====== Function for ladder fuel, density and standard metrics calculation =====
 
@@ -93,6 +93,7 @@ z_metrics <- function(z) {
   )
   
   return(c(ladder_metrics, stdmetrics_z(z)))
+  
 }
 
 # ================== Compute grid metrics for UAS and ALS data ================== 
@@ -103,11 +104,11 @@ for (z in zone) {
   
   uas_grid <- glue(uas_las_file) %>%
     readLAS(select = '') %>%
-    grid_metrics(~z_metrics(Z))
+    grid_metrics(~z_metrics(Z), res = res)
   
   writeRaster(
     x = uas_grid,
-    filename = glue('data/grid_metrics/rasters/ppwd_uas_z{z}_f2_hnorm-als_grid-metrics'),
+    filename = glue('{out_folder}/ppwd_uas_z{z}_f2_hnorm-als_grid-metrics_{res}m-grid'),
     datatype='FLT4S',
     format="GTiff",
     bylayer = TRUE,
@@ -120,7 +121,7 @@ for (z in zone) {
   
   writeRaster(
     x = als_grid,
-    filename = glue('data/grid_metrics/rasters/ppwd_als_z{z}_hnorm-als_grid-metrics'),
+    filename = glue('{out_folder}/ppwd_als_z{z}_hnorm-als_grid-metrics_{res}m-grid'),
     datatype='FLT4S',
     format="GTiff",
     bylayer = TRUE,
@@ -128,3 +129,5 @@ for (z in zone) {
     overwrite=TRUE)
 
 }
+
+# ===============================================================================
