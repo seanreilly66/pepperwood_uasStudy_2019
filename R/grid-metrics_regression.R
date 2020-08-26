@@ -55,7 +55,7 @@ library(ggpubr)
 
 # ================================= User inputs =================================
 
-grid_metrics_file <- 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_compiled-data.csv'
+grid_metrics_file <- 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_20m-grid_compiled-data.csv'
 
 # ======================== Regression modelling function ======================== 
 
@@ -192,7 +192,7 @@ for (metric in metric_names) {
   
 }
 
-write.csv(lm_low_rbr, 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_regression_low-rbr.csv')
+write.csv(lm_low_rbr, 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_20m-grid_regression_low-rbr.csv')
 
 rm(conifer, conifer_result, decid, decid_result, evrgrn, evrgrn_result, metric)
 
@@ -360,13 +360,12 @@ grid_data <- grid_data %>%
 decid <- grid_data %>%
   filter(veg_class == 'Deciduous Broadleaf') %>%
   group_by(rbr_class) %>%
-  sample_n(30)
+  sample_n(25)
 
 evrgrn <- grid_data %>%
   filter(veg_class == 'Evergreen Broadleaf') %>%
-  filter(rbr_class != 'High') %>%
   group_by(rbr_class) %>%
-  sample_n(30, replace = TRUE)
+  sample_n(25)
 
 rm(grid_data)
 
@@ -379,7 +378,7 @@ decid_plot <- ggplot(data = decid) +
       y = als_ladder_fuel)) +
   labs(
     x = NULL,
-    y = 'Ladder fuel percentage') + 
+    y = 'Pre-fire (ALS) ladder fuel percentage') + 
   ylim(0,1)
 
 decid_plot
@@ -399,7 +398,7 @@ evrgrn_plot
 
 fig <- ggarrange(
   decid_plot, evrgrn_plot,
-  nrow = 1, ncol = 2, widths = c(1,0.75),
+  nrow = 1, ncol = 2, widths = c(1,0.9),
   labels = list('(a)','(b)'), 
   font.label = list(family = 'serif', size = 16, face = 'plain'), 
   label.x = c(0.17, 0.06))
@@ -532,17 +531,17 @@ ladder_plot <- ggplot(
   xlim(0,1) +
   scale_color_discrete(
     name = NULL, 
-    labels = c('Deciduous broadleaf (y = 0.38***x + 0.14**, R = 0.59)', 
-               'Evergreen broadleaf (y = 0.02x + 0.17***, R = 0.07)', 
-               'Conifer (y = 0.00x + 0.13***, R = 0.42)')) +
+    labels = c('Deciduous broadleaf (R = 0.24)', 
+               'Evergreen broadleaf (R = 0.18)', 
+               'Conifer (R = 0.54)')) +
   theme(legend.position = c(0.48,0.9))
 
 ladder_plot
-
+ 
 ggsave(
   filename = 'figures/uas-ladder-fuel_vs_als-ladder-fuel.png',
-  width = 6, 
-  height = 6, 
+  width = 4.5, 
+  height = 4.5, 
   units = 'in', 
   dpi = 400)
 
