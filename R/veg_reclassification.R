@@ -146,7 +146,7 @@ zone_boundaries <- readOGR(zone_boundary_file) %>%
   spTransform(prj)
 
 for (z in zone) {
-  
+
   z_boundary <- subset(zone_boundaries, Zone == z)
   
   z_rcl_veg <- crop(rcl_veg, z_boundary)
