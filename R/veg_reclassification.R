@@ -37,25 +37,25 @@
 #
 # Input species classification scheme:
 #
-# 1 = builtup
-# 3 = grassland
-# 4 = orchard
-# 5 = shrubland
-# 6 = vineyard
-# 7 = water
-# 8 = wet herbaceous
-# 11 = big-leaf maple
-# 12 = black oak
-# 13 = blue oak
-# 14 = bay laurel
-# 15 = buckeye
-# 16 = coast live oak
-# 17 = redwood
-# 18 = douglas fir
-# 19 = oregon white oak
-# 20 = madrone
-# 21 = tanoak
-# 22 = valley oak
+# 1   Builtup
+# 3   Grassland
+# 4   Orchard
+# 5   Shrubland
+# 6   Vineyard
+# 7   Water
+# 8   Wet herbaceous
+# 11	ACMA	Acer macrophyllum	(Big leaf maple)
+# 12	AECA	Aesculus california	(Buckeye)
+# 13	ARME	Arbutus menziesii	(Madrone)
+# 14	NODE	Notholithocarpus densiflorus	(Tanoak)
+# 15	PSME	Pseudotsuga menziesii	(Douglas fir)
+# 16	QUAG	Quercus agrifolia	(Coast live oak)
+# 17	QUDO	Quercus douglasii	(Blue oak)
+# 18	QUGA	Quercus garryana	(Oregon oak)
+# 19	QUKE	Quercus kelloggii	(Black oak)
+# 20	QULO	Quercus lobata	(Valley oak)
+# 21	SESE	Sequoia sempervirens	(Redwood)
+# 22	UMCA	Umbellularia californica	(Bay laurel)
 #
 # ===============================================================================
 #
@@ -118,17 +118,17 @@ rcl_veg <- reclassify(
     7, 4, # water
     8, 5, # wet herbaceous
     11, 6, # big-leaf maple
-    12, 6, # black oak
-    13, 6, # blue oak
-    14, 7, # bay laurel
-    15, 6, # buckeye
+    12, 6, # buckeye
+    13, 7, # madrone
+    14, 7, # tanoak
+    15, 8, # douglas fir
     16, 7, # coast live oak
-    17, 8, # redwood
-    18, 8, # douglas fir
-    19, 6, # oregon white oak
-    20, 7, # madrone
-    21, 7, # tanoak
-    22, 6), # valley oak
+    17, 6, # blue oak
+    18, 6, # oregon oak
+    19, 6, # black oak
+    20, 6, # valley oak
+    21, 8, # redwood
+    22, 7), # bay laurel
     byrow = TRUE, ncol = 2
   )
 )
@@ -136,24 +136,26 @@ rcl_veg <- reclassify(
 writeRaster(
   x = rcl_veg,
   filename = rcl_veg_output,
-  format = 'GTiff'
+  format = 'GTiff',
+  overwrite = TRUE
 )
 
 # ===================== Clip veg raster to zone boundaries ====================== 
 
-zone_boundary <- readOGR(zone_boundary_file) %>%
+zone_boundaries <- readOGR(zone_boundary_file) %>%
   spTransform(prj)
 
 for (z in zone) {
   
-  z_bound <- subset(zone_boundary, Zone == z)
+  z_boundary <- subset(zone_boundaries, Zone == z)
   
-  zone_veg <- crop(rcl_veg, z_bound)
+  z_rcl_veg <- crop(rcl_veg, z_boundary)
   
   writeRaster(
-    zone_veg,
+    z_rcl_veg,
     filename = glue(rcl_veg_zone_output),
-    format = 'GTiff'
+    format = 'GTiff',
+    overwrite = TRUE
   )
   
 }
