@@ -1,13 +1,13 @@
 # ===============================================================================
 #
-# Cloth simulation parameter testing for optimized dtm generation
+# Cloth simulation parameter testing for optimized dtm generation - Round 1
 #
 # ===============================================================================
 #
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 26 Feb 2020
-# Last commit: 2 June 2019
+# Last commit: 2 Sept 2020
 #
 # This file created as part of 2019 Pepperwood UAS study
 #
@@ -37,6 +37,9 @@
 # Script optimized to be run repeatedly on Linux cluster for different flight zones.
 # Therefore, currently prompts user to enter a zone number and this is used in 
 # selecting all other files.
+#
+# Round one of testing: Iterates over widest range of parameter values with a step 
+# of 0.1 between options. 
 #
 # ===============================================================================
 # 
@@ -93,6 +96,12 @@
 # 
 # ===============================================================================
 
+# ========================= Prompt user for zone input ========================== 
+
+zone <- as.integer(readline('zone number: '))
+
+# =============================== Load libraries ================================ 
+
 lib = 'r_lib' # for linux cluster use
 # lib = NULL # for local use
 
@@ -113,7 +122,6 @@ suppressPackageStartupMessages(library(glue, lib.loc = lib))
 
 # ================================= User inputs =================================
 
-zone <- as.integer(readline('zone number: '))
 round <- 1
 
 las_file <- glue('data/las/uas/ppwd_uas_z{zone}_f2_reg2als.las')
