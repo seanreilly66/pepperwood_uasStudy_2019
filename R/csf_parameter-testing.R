@@ -93,7 +93,7 @@
 # 
 # ===============================================================================
 
-lib = 'r_lib' 
+lib = 'r_lib' # for linux cluster use
 # lib = NULL # for local use
 
 suppressPackageStartupMessages(library(sp, lib.loc = lib))
@@ -127,7 +127,7 @@ n_value <- 0
 cr_testrange <- seq(0.1, 2.5, 0.1)
 ct_testrange <- seq(0.1, 2.5, 0.1)
 r_testrange <- 1:3
-ts_testrange <- seq(0.1, 2.5,0.1)
+ts_testrange <- seq(0.1, 2.5, 0.1)
 n_testrange <- seq(0, 1, 0.1)
 
 dtm_res <- 1
@@ -136,27 +136,28 @@ standard_dtm <- glue('data/dtm/als/ppwd_als_z{zone}_dtm.tif')
 
 roi <- 'data/site_data/zone_shp/ppwd_zones_50mBuffer.shp'
 
-veg_class <- glue('data/site_data/veg_class/zone/ppwd_vegclass_z{zone}.tif')
+veg_class <- glue('data/site_data/veg_class/zone/ppwd_veg_z{zone}.tif')
 
-output <- glue('data/dtm/csf_paramtesting/ppwd_csf_paramtesting_rnd{round}_z{zone}.csv')
+output <- glue('data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{round}_z{zone}.csv')
      
 # =============== CSF ground finding and DTM generation function ================
   
 csf_dtmgen <- function(las, cr, ct, r, ts, n, dtm_res) {
   
-  las_ground <- lasground(las, 
-                          algorithm = csf(
-                            class_threshold = ct,
-                            cloth_resolution = cr,
-                            rigidness = r,
-                            time_step = ts,
-                            iterations = 500L,
-                            sloop_smooth = FALSE),
-                          last_returns = FALSE) %>%
-    lasfilterground()
+  las_ground <- classify_ground(
+    las = las,
+    algorithm = csf(
+      class_threshold = ct,
+      cloth_resolution = cr,
+      rigidness = r,
+      time_step = ts,
+      iterations = 500L,
+      sloop_smooth = FALSE),
+      last_returns = FALSE) %>%
+    filter_ground()
   
   if (n != 0) {
-    las_ground <- lasfilter(las_ground, NDVI <= n)
+    las_ground <- filter_poi(las_ground, NDVI <= n)
   }
 
   if (length(las_ground$X) < 1000) {
@@ -164,9 +165,10 @@ csf_dtmgen <- function(las, cr, ct, r, ts, n, dtm_res) {
   } 
   
   dtm <- suppressWarnings(
-    grid_terrain(las = las_ground,
-                 res = dtm_res,
-                 algorithm = tin())) # Suppress degenerated ground point warning. No effect on ouput.
+    grid_terrain(
+      las = las_ground,
+      res = dtm_res,
+      algorithm = tin())) # Suppress degenerated ground point warning. No effect on ouput.
 
   return(dtm)
   
@@ -246,8 +248,8 @@ error_calc <- function(dtm, test_param, standard_dtm, veg_class, roi) {
   return(error_summary)
   
 }
-  
-# =============================== Load site data ================================
+
+# ============================== Prepare datasets ===============================
   
 las <- readLAS(las_file, select = '3') # 3 = NDVI extrabytes slot
 
@@ -265,10 +267,8 @@ veg_class <- raster(veg_class) %>%
   raster::trim() %>%
   as.data.frame(na.rm = TRUE, xy = TRUE)
 
-# ============================ CSF parameter testing ============================
-
 csf_param_error <- data.frame(matrix(nrow = 0, ncol = 27)) %>%
-  mutate(1, factor())
+  mutate(X1 = factor(X1))
 
 colnames(csf_param_error) <- c('testing_parameter', 'cloth_resolution', 'class_threshold', 
   'cloth_rigidness', 'time_step', 'ndvi_filter', 'dtm_cells', 'rmse', 'prcnt_LT2', 'avg', 
@@ -282,62 +282,82 @@ r = r_value
 ts = ts_value
 n = n_value
 
+# ===================== Cloth resolution parameter testing ====================== 
 
 test_param = 'cloth_resolution'
 message('Processing ', test_param)
 
 for(cr in cr_testrange) {
+  
   message('\n', test_param, ': ', cr)
+  
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
+  
   if (!is.null(error_summary)) {
     csf_param_error <- add_row(csf_param_error, error_summary)
   }
+  
 }
 
 cr <- cr_value
 
+# ====================== Class threshold parameter testing ====================== 
 
 test_param = 'class_threshold'
 message('Processing ', test_param)
 
 for(ct in ct_testrange) {
+  
   message('\n', test_param, ': ', ct)
+  
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
+  
   if (!is.null(error_summary)) {
     csf_param_error <- add_row(csf_param_error, error_summary)
   }
+  
 }
 
 ct <- ct_value
 
+# ====================== Cloth rigidness parameter testing ======================
 
 test_param = 'cloth_rigidness'
 message('Processing ', test_param)
 
 for(r in r_testrange) {
+  
   message('\n', test_param, ': ', r)
+  
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
+  
   if (!is.null(error_summary)) {
     csf_param_error <- add_row(csf_param_error, error_summary)
   }
+  
 }
 
 r <- r_value
 
+# ========================= Time step parameter testing =========================
 
 test_param = 'time_step'
 message('Processing ', test_param)
 
 for(ts in ts_testrange) {
+  
   message('\n', test_param, ': ', ts)
+  
   dtm <- csf_dtmgen(las, cr, ct, r, ts, n, dtm_res)
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
+  
   if (!is.null(error_summary)) {
     csf_param_error <- add_row(csf_param_error, error_summary)
   }
+  
 }
 
 ts <- ts_value
@@ -347,24 +367,26 @@ ts <- ts_value
 test_param = 'ndvi_filter'
 message('Processing ', test_param)
 
-las_ground <- lasground(las, 
-                        algorithm = csf(
-                          class_threshold = ct,
-                          cloth_resolution = cr,
-                          rigidness = r,
-                          time_step = ts,
-                          iterations = 500L,
-                          sloop_smooth = FALSE),
-                        last_returns = FALSE) %>%
-  lasfilterground()
+las_ground <- classify_ground(
+  las = las,
+  algorithm = csf(
+    class_threshold = ct,
+    cloth_resolution = cr,
+    rigidness = r,
+    time_step = ts,
+    iterations = 500L,
+    sloop_smooth = FALSE),
+  last_returns = FALSE) %>%
+  filter_ground()
 
 for(n in n_testrange) {
+  
   message('\n', test_param, ': ', n)
   
   if (n == 0) {
     las_ndvi <- las_ground
   } else {
-    las_ndvi <- lasfilter(las_ground, NDVI <= n)
+    las_ndvi <- filter_poi(las_ground, NDVI <= n)
   }
   
   if (length(las_ndvi$X) < 1000) {
@@ -372,20 +394,21 @@ for(n in n_testrange) {
   } 
   
   dtm <- suppressWarnings(
-    grid_terrain(las = las_ndvi,
-                 res = dtm_res,
-                 algorithm = tin())) # Suppress degenerated ground point warning. No effect on ouput.
+    grid_terrain(
+      las = las_ndvi,
+      res = dtm_res,
+      algorithm = tin())) # Suppress degenerated ground point warning. No effect on ouput.
   
   error_summary <- error_calc(dtm, test_param, standard_dtm, veg_class, roi)
+  
   if (!is.null(error_summary)) {
     csf_param_error <- add_row(csf_param_error, error_summary)
   }
+  
 }
 
 # ============================== Write CSV to file ==============================
 
 write.csv(csf_param_error, output, row.names = FALSE)
   
-  
-  
-
+# ===============================================================================
