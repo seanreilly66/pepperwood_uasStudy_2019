@@ -142,7 +142,7 @@ dtm_res <- 1
 
 standard_dtm <- glue('data/dtm/als/ppwd_als_z{zone}_dtm.tif')
 
-roi <- 'data/site_data/zone_shp/ppwd_zones_50mBuffer.shp'
+roi <- 'data/site_data/zone_shp/ppwd_zones_50m-buffer.shp'
 
 veg_class <- glue('data/site_data/veg_class/zone/ppwd_veg_z{zone}.tif')
 
