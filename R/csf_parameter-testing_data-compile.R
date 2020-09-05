@@ -29,7 +29,7 @@
 # rnd = CSF parameter testing round
 # csf_result_file = .csv file name skeleton (including {z} zone and {rnd} round
 #   glue placeholders) for CSF parameter results by zone (output from 
-#   csf_parameter-testing script) 
+#   csf_parameter-testing script) from csf_parameter-testing_rnd#.R outputs
 # compile_output = compiled zonal data output file name
 # 
 # ===============================================================================
