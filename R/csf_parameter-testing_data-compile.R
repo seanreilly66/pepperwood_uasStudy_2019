@@ -49,11 +49,26 @@ library(glue)
 
 # ================================= User inputs =================================
 
+rnd <- 2
+test_param <- 'ndvi-filter'
+
 zone <- c(2:4, 6:13)
-rnd <- 1
-csf_result_file <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_z{z}.csv'
-compile_output <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_z-compile.csv'
-summary_output <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_site-error.csv'
+
+if (rnd == 1) {
+  
+  csf_result_file <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_z{z}.csv'
+  compile_output <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_z-compile.csv'
+  summary_output <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_site-error.csv'
+  
+}
+
+if (rnd == 2) {
+  
+  csf_result_file <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_{test_param}_z{z}.csv'
+  compile_output <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_{test_param}_z-compile.csv'
+  summary_output <- 'data/dtm/csf_parameter-testing/ppwd_csf-parameter-testing_rnd{rnd}_{test_param}_site-error.csv'
+
+}
 
 # ============ Filter for sufficient coverage and combine zonal data ============ 
 
