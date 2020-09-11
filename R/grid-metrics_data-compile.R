@@ -85,18 +85,18 @@ library(glue)
 
 # ================================= User inputs =================================
 
-zone <- c(2:4, 6:13)
+zone <- c(2:4, 6:13) 
 
 grid_file <- 'data/grid_metrics/rasters/'
 
-uas_grid_metric_file <- 'ppwd_uas_z{z}_f2_hnorm-als_grid-metrics_10m-grid'
-als_grid_metric_file <- 'ppwd_als_z{z}_hnorm-als_grid-metrics_10m-grid'
+uas_grid_metric_file <- 'ppwd_uas_z{z}_f2_hnorm-als_grid-metrics_20m-grid'
+als_grid_metric_file <- 'ppwd_als_z{z}_hnorm-als_grid-metrics_20m-grid'
 
-veg_file <- 'data/site_data/veg_class/zone/ppwd_vegclass_z{z}.tif'
-rbr_file <- 'data/site_data/tubbs17_rbr/zone/ppwd_tubbs_rbr_z{z}.tif'
+veg_file <- 'data/site_data/veg_class/zone/ppwd_veg_z{z}.tif'
+rbr_file <- 'data/site_data/tubbs17_rbr/zone/ppwd_tubbs17_rbr_z{z}.tif'
 topo_file <- 'data/site_data/topography/zone/ppwd_topo_z{z}.tif'
 
-out_file <- 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_10m-grid_compiled-data.csv'
+out_file <- 'data/grid_metrics/ppwd_hnorm-als_grid-metrics_20m-grid_compiled-data.csv'
 
 # ======== Data compilation function ===========
 
