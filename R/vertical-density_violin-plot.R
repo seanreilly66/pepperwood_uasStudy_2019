@@ -50,45 +50,45 @@ library(ggpubr)
 
 # ================================= User inputs =================================
 
-decid_uas <- 'data/pntcld_density/ppwd_deciduous_uas.csv'
-decid_als <- 'data/pntcld_density/ppwd_deciduous_als.csv'
+decid_uas <- 'data/pntcld_vertical_density/ppwd_uas_height_deciduous_unburned-forest-stand.csv'
+decid_als <- 'data/pntcld_vertical_density/ppwd_als_height_deciduous_unburned-forest-stand.csv'
 
-evrgrn_uas <- 'data/pntcld_density/ppwd_evrgrn_uas.csv'
-evrgrn_als <- 'data/pntcld_density/ppwd_evrgrn_als.csv'
+evrgrn_uas <- 'data/pntcld_vertical_density/ppwd_uas_height_evergreen_unburned-forest-stand.csv'
+evrgrn_als <- 'data/pntcld_vertical_density/ppwd_als_height_evergreen_unburned-forest-stand.csv'
 
-conifer_uas <- 'data/pntcld_density/ppwd_conifer_uas.csv'
-conifer_als <- 'data/pntcld_density/ppwd_conifer_als.csv'
+conifer_uas <- 'data/pntcld_vertical_density/ppwd_uas_height_conifer_unburned-forest-stand.csv'
+conifer_als <- 'data/pntcld_vertical_density/ppwd_als_height_conifer_unburned-forest-stand.csv'
 
 # ============================= Dataset combination ============================= 
 
 height_df <- bind_rows(
   read.csv(decid_uas) %>%
-    select(2) %>%
+    dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Deciduous broadleaf') %>%
     add_column(data_type = 'UAS'),
   read.csv(decid_als) %>%
-    select(2) %>%
+    dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Deciduous broadleaf') %>%
     add_column(data_type = 'ALS'),
   read.csv(evrgrn_uas) %>%
-    select(2) %>%
+    dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Evergreen broadleaf') %>%
     add_column(data_type = 'UAS'),
   read.csv(evrgrn_als) %>%
-    select(2) %>%
+    dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Evergreen broadleaf') %>%
     add_column(data_type = 'ALS'),
   read.csv(conifer_uas) %>%
-    select(2) %>%
+    dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Conifer') %>%
     add_column(data_type = 'UAS'),
   read.csv(conifer_als) %>%
-    select(2) %>%
+    dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Conifer') %>%
     add_column(data_type = 'ALS')) %>%
@@ -126,19 +126,21 @@ fig <- ggplot(
   labs(
     y = 'Height (m)',
     x = NULL) +
-  ylim(0,30) +
+  scale_y_continuous(
+    limits = c(0,50)
+    ) +
   scale_fill_grey(
     start = 1,
     end = 0.8,
     name = NULL) +
-  theme(legend.position = c(0.1, 0.9))
+  theme(legend.position = c(0.8, 0.8))
 
 fig
 
 ggsave(
   filename = 'figures/height_violin.png',
-  width = 8, 
-  height = 4, 
+  width = 6.5, 
+  height = 3.5, 
   units = 'in', 
   dpi = 400)
 
