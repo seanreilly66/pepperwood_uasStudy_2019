@@ -62,7 +62,7 @@ rm(lib)
 
 zone <- c(2:4, 6:13)
 
-uas_las_file <- 'D:/data/las/uas/processed/ppwd_uas_z{z}_f2_reg2als.las'
+uas_las_file <- 'data/las/uas/ppwd_uas_z{z}_f2_reg2als.las'
 als_las_file <- 'data/las/als/ppwd_als_z{z}.las'
 als_dtm_file <- 'data/dtm/als/ppwd_als_z{z}_dtm.tif'
 uas_dtm_file <- 'data/dtm/uas/ppwd_uas_z{z}_f2_dtm.tif'
@@ -99,10 +99,9 @@ ctg_normnoise <- function(dtm, ctg_las_file) {
   ctg <- glue(ctg_las_file)
   ctg <- readLAScatalog(ctg)
 
-  opt_chunk_size(ctg) <- 250
+  opt_chunk_size(ctg) <- 150
   opt_chunk_buffer(ctg) <- 30
   opt_output_files(ctg) <- glue('{tempfile()}_{{ID}}')
-  opt_select(ctg) <- ''
   opt_chunk_alignment(ctg) <- c(ctg$Min.X,ctg$Min.Y)
 
   ctg <- catalog_apply(
@@ -114,7 +113,6 @@ ctg_normnoise <- function(dtm, ctg_las_file) {
   ctg <- readLAScatalog(unlist(ctg))
 
   opt_chunk_buffer(ctg) = 0
-  opt_select(ctg) <- ''
 
   ctg <- catalog_sapply(
     ctg = ctg,
@@ -139,34 +137,34 @@ for (z in zone) {
 
 rm(z, als_dtm, uas_hnorm2als)
 
-# ======================== ALS height normalized to ALS ========================= 
-
-for (z in zone) {
-  
-  als_dtm <- raster(glue(als_dtm_file))
-  
-  als_hnorm2als <- ctg_normnoise(
-    dtm = als_dtm, 
-    ctg_las_file = als_las_file)
-  
-  writeLAS(als_hnorm2als, glue('data/las/als/ppwd_als_z{z}_hnorm-als.las'))
-  
-}
-
-rm(z, als_dtm, als_hnorm2als)
-
-# ======================== UAS height normalized to UAS ========================= 
-zone = 8:13
-for (z in zone) {
-  
-  uas_dtm <- raster(glue(uas_dtm_file))
-  
-  uas_hnorm2uas <- ctg_normnoise(
-    dtm = uas_dtm, 
-    ctg_las_file = uas_las_file)
-  
-  writeLAS(uas_hnorm2uas, glue('D:/data/las/uas/processed/ppwd_uas_z{z}_f2_hnorm-uas.las'))
-  
-}
+# # ======================== ALS height normalized to ALS ========================= 
+# 
+# for (z in zone) {
+#   
+#   als_dtm <- raster(glue(als_dtm_file))
+#   
+#   als_hnorm2als <- ctg_normnoise(
+#     dtm = als_dtm, 
+#     ctg_las_file = als_las_file)
+#   
+#   writeLAS(als_hnorm2als, glue('data/las/als/ppwd_als_z{z}_hnorm-als.las'))
+#   
+# }
+# 
+# rm(z, als_dtm, als_hnorm2als)
+# 
+# # ======================== UAS height normalized to UAS ========================= 
+# zone = 8:13
+# for (z in zone) {
+#   
+#   uas_dtm <- raster(glue(uas_dtm_file))
+#   
+#   uas_hnorm2uas <- ctg_normnoise(
+#     dtm = uas_dtm, 
+#     ctg_las_file = uas_las_file)
+#   
+#   writeLAS(uas_hnorm2uas, glue('D:/data/las/uas/processed/ppwd_uas_z{z}_f2_hnorm-uas.las'))
+#   
+# }
 
 rm(z, als_dtm, uas_hnorm2uas)
