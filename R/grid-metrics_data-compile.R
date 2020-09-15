@@ -138,6 +138,8 @@ data_compile <- function(grid_file, uas_file, als_file, veg_file, rbr_file, topo
 
 z = zone[1]
 
+message('Processing zone: ', z)
+
 compile_data = data_compile(
   grid_file = grid_file,
   uas_file = glue(uas_grid_metric_file),
@@ -148,6 +150,8 @@ compile_data = data_compile(
 )
 
 for (z in zone[-1]) {
+  
+  message('Processing zone: ', z)
   
   zone_data = data_compile(
     grid_file = grid_file,
