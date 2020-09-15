@@ -63,7 +63,7 @@ uas_las_file <- 'D:/data/las/uas/processed/ppwd_uas_z{z}_f2_hnorm-als.las'
 
 als_las_file <- 'data/las/als/ppwd_als_z{z}_hnorm-als.las'
 
-res = 10
+res = 20
 
 out_folder <- 'data/grid_metrics/rasters'
 

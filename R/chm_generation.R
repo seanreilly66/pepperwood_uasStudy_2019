@@ -71,8 +71,8 @@ als_las_file <- 'data/las/als/ppwd_uas_z{z}_hnorm-{dtm_source}.las'
 
 chm_res <- 0.5
 
-uas_output <- 'data/chm/ppwd_uas_z{z}_f2_hnorm-{dtm_source}_chm'
-als_output <- 'data/chm/ppwd_als_z{z}_hnorm-{dtm_source}_chm'
+uas_output <- 'data/chm/rasters/ppwd_uas_z{z}_f2_hnorm-{dtm_source}_chm'
+als_output <- 'data/chm/rasters/ppwd_als_z{z}_hnorm-{dtm_source}_chm'
 
 # =========================== CHM generation function =========================== 
 
