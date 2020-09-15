@@ -7,7 +7,7 @@
 # Author: Sean Reilly, sean.reilly66@gmail.com
 #
 # Created: 16 Aug 2020
-# Last commit: 17 Aug 2020
+# Last commit: 14 Sept 2020
 #
 # Status: Under development
 #
@@ -86,23 +86,31 @@ theme_set(
 grid_data <- data.table::fread(grid_metrics_file)
 
 grid_data <- grid_data %>%
-  select(c(4:9, 15:17, 27:53, 59:61, 71:94))
+  select(uas_20m.grid_ladder_fuel, uas_20m.grid_d00, uas_20m.grid_d01, uas_20m.grid_d02, 
+         uas_20m.grid_zmax, uas_20m.grid_zmean, uas_20m.grid_zq5, uas_20m.grid_zq25, 
+         uas_20m.grid_zq50, uas_20m.grid_zq75, uas_20m.grid_zq95, uas_20m.grid_zsd, 
+         uas_20m.grid_zskew, uas_20m.grid_zkurt, als_20m.grid_ladder_fuel, 
+         als_20m.grid_d00, als_20m.grid_d01, als_20m.grid_d02, als_20m.grid_zmax, 
+         als_20m.grid_zmean, als_20m.grid_zq5, als_20m.grid_zq25, als_20m.grid_zq50,
+         als_20m.grid_zq75, als_20m.grid_zq95, als_20m.grid_zsd, als_20m.grid_zskew, 
+         als_20m.grid_zkurt, veg_class, rbr_class)
 
-set.seed(4850)
+set.seed(305)
 
 grid_data <- grid_data %>%
   filter_all(all_vars(!is.na(.))) %>%
   filter(veg_class%%1 < 0.25 | veg_class%%1 > 0.75) %>%
   filter(rbr_class <= 2) %>%
-  mutate_at(c('veg_class', 'rbr_class', 'topo_class'), round) %>%
-  mutate_at(c('veg_class', 'rbr_class', 'topo_class'), as_factor) %>%
+  filter(veg_class > 5.75) %>%
+  mutate_at(c('veg_class', 'rbr_class'), round) %>%
+  mutate_at(c('veg_class', 'rbr_class'), as_factor) %>%
   mutate(veg_class = fct_recode(
     veg_class,
     'Deciduous broadleaf' = '6',
     'Evergreen broadleaf' = '7',
     'Conifer' = '8')) %>%
   group_by(veg_class) %>%
-  sample_n(size = 30) 
+  sample_n(size = 30)
 
 decid <- grid_data %>%
   filter(veg_class == 'Deciduous broadleaf')
@@ -224,8 +232,8 @@ sig_asterisk <- function(p_val) {
 
 lm_low_rbr <- lm_low_rbr %>%
   mutate(metric = str_extract(metric, '(?<=d_).+')) %>%
-  filter(metric %in% c('ladder_fuel', 'd00', 'd01', 'd02', 'zmax', 'zmean', 'zq5', 'zq25', 'zq50',
-                       'zq75', 'zq95', 'zsd', 'zskew', 'zkurt')) %>%
+  # filter(metric %in% c('ladder_fuel', 'd00', 'd01', 'd02', 'zmax', 'zmean', 'zq5', 'zq25', 'zq50',
+  #                      'zq75', 'zq95', 'zsd', 'zskew', 'zkurt')) %>%
   mutate_at(c(2,3,5:7,9:11,13), round, digits = 2) %>%
   mutate(conifer_coef = glue('{conifer_coef}({conifer_se}){sig_asterisk(conifer_p)}')) %>%
   mutate(decid_coef = glue('{decid_coef}({decid_se}){sig_asterisk(decid_p)}')) %>%
@@ -265,10 +273,12 @@ ladder_plot <- ggplot(
   xlim(0,1) +
   scale_color_manual(
     name = NULL,
-    values = c('#117733', '#332288', '#88CCEE'),
-    labels = c(glue('Conifer (R = {ladder_r$conifer_r})'),
-               glue('Evergreen broadleaf (R = {ladder_r$evrgrn_r})'),
-               glue('Deciduous broadleaf (R = {ladder_r$decid_r})'))) +
+    values = c('#117733', '#332288', '#88CCEE')
+    # ,
+    # labels = c(glue('Conifer (R = {ladder_r$conifer_r})'),
+    #            glue('Evergreen broadleaf (R = {ladder_r$evrgrn_r})'),
+    #            glue('Deciduous broadleaf (R = {ladder_r$decid_r})'))
+    ) +
   theme(legend.position = c(0.48,0.9))
 
 ladder_plot
@@ -294,7 +304,8 @@ grid_data <- data.table::fread(grid_metrics_file)
 grid_data <- grid_data %>%
   select(uas_20m.grid_zq95, als_20m.grid_zq95, 
          uas_20m.grid_zq75, als_20m.grid_zq75, 
-         als_20m.grid_ladder_fuel, veg_class, rbr_class)
+         als_20m.grid_ladder_fuel, uas_20m.grid_p75_ndvi,
+         veg_class, rbr_class)
 
 set.seed(305)
 
@@ -325,6 +336,7 @@ grid_data <- grid_data %>%
     zq95_dif = uas_20m.grid_zq95 - als_20m.grid_zq95,
     zq75_dif = uas_20m.grid_zq75 - als_20m.grid_zq75,
     ladder_fuels = als_20m.grid_ladder_fuel,
+    p75_ndvi = uas_20m.grid_p75_ndvi,
     veg_class = veg_class,
     rbr_class = rbr_class)
 
@@ -368,7 +380,7 @@ rbr_p95_plot <- function(data_set, group_labels) {
         fill = rbr_class)) +
     labs(
       x = 'RBR severity',
-      y = bquote(''~Delta ~P[95]~' (post-pre fire)')) +
+      y = bquote(''~Delta ~P[95]~' Height (m)')) +
     ylim(-30, 10) +
     scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
     guides(fill = FALSE) +
@@ -394,7 +406,7 @@ conifer_p95_kruskal
 conifer_p95_dunn <- dunnTest(zq95_dif ~ rbr_class, data = conifer, method = "bonferroni")
 conifer_p95_dunn
 
-conifer_p95_labels <- c('e', 'e', 'f', 'f')
+conifer_p95_labels <- c('e', 'e', 'e,f', 'f')
 
 conifer_p95_plot <- rbr_p95_plot(conifer, conifer_p95_labels)
 conifer_p95_plot
@@ -455,7 +467,7 @@ p95_fig <- annotate_figure(
 p95_fig
 
 ggsave(
-  filename = 'figures/tubbs-fire_rbr_vs_dif-p95.png',
+  filename = 'figures/tubbs-fire-rbr_vs_dif-p95.png',
   width = 7, 
   height = 3.5, 
   units = 'in', 
@@ -493,7 +505,7 @@ rbr_p75_plot <- function(data_set, group_labels) {
         fill = rbr_class)) +
     labs(
       x = 'RBR severity',
-      y = bquote(''~Delta ~P[75]~' (post-pre fire)')) +
+      y = bquote(''~Delta ~P[75]~' Height (m)')) +
     ylim(-30, 10) +
     scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
     guides(fill = FALSE) +
@@ -577,7 +589,7 @@ p75_fig <- annotate_figure(
 p75_fig
 
 ggsave(
-  filename = 'figures/tubbs-fire_rbr_vs_dif-p75.png',
+  filename = 'figures/tubbs-fire-rbr_vs_dif-p75.png',
   width = 7, 
   height = 3.5, 
   units = 'in', 
@@ -585,6 +597,125 @@ ggsave(
 
 rm(decid_p75_dunn, decid_p75_kruskal, evrgrn_p75_dunn, evrgrn_p75_kruskal, 
    conifer_p75_dunn, conifer_p75_kruskal, rbr_p75_plot)
+
+# ===============================================================================
+# ===================== Fire impact on 75th percentile NDVI ===================== 
+# ===============================================================================
+
+# ============================= Plotting function =============================== 
+
+rbr_ndvi_plot <- function(data_set, group_labels) {
+  
+  dunn_groups <- data_set %>%
+    group_by(rbr_class) %>%
+    filter(p75_ndvi < 1) %>%
+    summarize(
+      y = max(p75_ndvi) + 0.02
+    ) %>%
+    add_column(label = group_labels)
+  
+  fig <- ggplot(data = data_set) +
+    geom_boxplot(
+      aes(
+        x = rbr_class,
+        y = p75_ndvi,
+        fill = rbr_class)) +
+    labs(
+      x = 'RBR severity',
+      y = bquote('Post-fire '~P[75]~' NDVI')) +
+    scale_y_continuous(
+      breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+      limits = c(0,1)) +
+    scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
+    guides(fill = FALSE) +
+    geom_text(
+      data = dunn_groups,
+      aes(x = rbr_class, 
+          y = y, 
+          label = label),
+      vjust=0,
+      family = 'serif', 
+      fontface = 'plain',
+      size = 4.5) 
+  
+  return(fig)
+  
+}
+
+# ============================= Conifer comparison ==============================
+
+conifer_ndvi_kruskal <- kruskal.test(p75_ndvi ~ rbr_class, data = conifer)
+conifer_ndvi_kruskal
+
+conifer_ndvi_dunn <- dunnTest(p75_ndvi ~ rbr_class, data = conifer, method = "bonferroni")
+conifer_ndvi_dunn
+
+conifer_ndvi_labels <- c('e', 'e', 'f', 'f')
+
+conifer_ndvi_plot <- rbr_ndvi_plot(conifer, conifer_ndvi_labels)
+conifer_ndvi_plot
+
+# ============================ Evergreen comparison ============================= 
+
+evrgrn_ndvi_kruskal <- kruskal.test(p75_ndvi ~ rbr_class, data = evrgrn)
+evrgrn_ndvi_kruskal
+
+evrgrn_ndvi_dunn <- dunnTest(p75_ndvi ~ rbr_class, data = evrgrn, method = "bonferroni")
+evrgrn_ndvi_dunn
+
+evrgrn_ndvi_labels <- c('e', 'e', 'f', 'f')
+
+evrgrn_ndvi_plot <- rbr_ndvi_plot(evrgrn, evrgrn_ndvi_labels)
+evrgrn_ndvi_plot
+
+# ============================ Deciduous comparison ============================= 
+
+decid_ndvi_kruskal <- kruskal.test(p75_ndvi ~ rbr_class, data = decid)
+decid_ndvi_kruskal
+
+decid_ndvi_dunn <- dunnTest(p75_ndvi ~ rbr_class, data = decid, method = "bonferroni")
+decid_ndvi_dunn
+
+decid_ndvi_labels <- c('e', 'e', 'f')
+
+decid_ndvi_plot <- rbr_ndvi_plot(decid, decid_ndvi_labels)
+decid_ndvi_plot
+
+# ================================ Combine plots ================================ 
+
+conifer_ndvi_plot <- conifer_ndvi_plot +
+  labs(x = NULL)
+
+evrgrn_ndvi_plot <- evrgrn_ndvi_plot +
+  labs(y = NULL, x = NULL) +
+  theme(axis.text.y = element_blank())
+
+decid_ndvi_plot <- decid_ndvi_plot +
+  labs(y = NULL, x = NULL) +
+  theme(axis.text.y = element_blank())
+
+ndvi_fig <- ggarrange(
+  conifer_ndvi_plot, evrgrn_ndvi_plot, decid_ndvi_plot, 
+  nrow = 1, ncol = 3, widths = c(1, 0.8, 0.62),
+  labels = list('Conifer','Evergreen broadleaf', 'Deciduous broadleaf'), 
+  font.label = list(family = 'serif', size = 13, face = 'plain'), 
+  label.x = c(0.17, -0.23, -0.31))
+
+ndvi_fig <- annotate_figure(
+  ndvi_fig, 
+  bottom = text_grob('RBR Severity', family = 'serif', size = 16))
+
+ndvi_fig
+
+ggsave(
+  filename = 'figures/tubbs-fire-rbr_vs_p75-ndvi.png',
+  width = 7, 
+  height = 3.5, 
+  units = 'in', 
+  dpi = 400)
+
+rm(decid_ndvi_dunn, decid_ndvi_kruskal, evrgrn_ndvi_dunn, evrgrn_ndvi_kruskal, 
+   conifer_ndvi_dunn, conifer_ndvi_kruskal, rbr_ndvi_plot)
 
 # ============================ Compile stacked plot =============================
 
@@ -597,12 +728,22 @@ evrgrn_p95_plot <- evrgrn_p95_plot +
 decid_p95_plot <- decid_p95_plot +
   theme(axis.text.x = element_blank())
 
+conifer_p75_plot <- conifer_p75_plot +
+  theme(axis.text.x = element_blank())
+
+evrgrn_p75_plot <- evrgrn_p75_plot +
+  theme(axis.text.x = element_blank())
+
+decid_p75_plot <- decid_p75_plot +
+  theme(axis.text.x = element_blank())
+
 p_fig <- ggarrange(
   conifer_p95_plot, evrgrn_p95_plot, decid_p95_plot,
-  conifer_p75_plot, evrgrn_p75_plot, decid_p75_plot, 
-  nrow = 2, ncol = 3, widths = c(1, 0.8, 0.62),
+  conifer_p75_plot, evrgrn_p75_plot, decid_p75_plot,
+  conifer_ndvi_plot, evrgrn_ndvi_plot, decid_ndvi_plot,
+  nrow = 3, ncol = 3, widths = c(1, 0.8, 0.62),
   labels = list('Conifer','Evergreen broadleaf', 'Deciduous broadleaf'), 
-  font.label = list(family = 'serif', size = 13, face = 'plain'), 
+  font.label = list(family = 'serif', size = 14, face = 'plain'), 
   label.x = c(0.17, -0.23, -0.31))
 
 p_fig <- annotate_figure(
@@ -612,14 +753,11 @@ p_fig <- annotate_figure(
 p_fig
 
 ggsave(
-  filename = 'figures/tubbs-fire_rbr_vs_p-dif.png',
-  width = 7, 
-  height = 5, 
+  filename = 'figures/tubbs-fire-rbr_vs_height-metrics.png',
+  width = 7.5,
+  height = 7.5,
   units = 'in', 
   dpi = 400)
-
-
-
 
 # ===============================================================================
 # ==================== Ladder fuels impact on fire severity ===================== 
@@ -631,7 +769,7 @@ rbr_ladder_plot <- function(data_set, group_labels) {
   
   dunn_groups <- data_set %>%
     group_by(rbr_class) %>%
-    filter(ladder_fuels < 1) %>%
+    filter(ladder_fuels < 0.85) %>%
     summarize(
       y = max(ladder_fuels) + 0.02
     ) %>%
@@ -646,7 +784,9 @@ rbr_ladder_plot <- function(data_set, group_labels) {
     labs(
       x = 'RBR severity',
       y = bquote('Pre-fire ladder fuels')) +
-    ylim(0, 1) +
+    scale_y_continuous(
+      breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1.0),
+      limits = c(0,1)) +
     scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
     guides(fill = FALSE) +
     geom_text(
@@ -664,72 +804,72 @@ rbr_ladder_plot <- function(data_set, group_labels) {
 
 # ============================= Conifer comparison ==============================
 
-conifer_kruskal <- kruskal.test(ladder_fuels ~ rbr_class, data = conifer)
+conifer_ladder_kruskal <- kruskal.test(ladder_fuels ~ rbr_class, data = conifer)
 conifer_kruskal
 
-conifer_dunn <- dunnTest(ladder_fuels ~ rbr_class, data = conifer, method = "bonferroni")
-conifer_dunn
+conifer_ladder_dunn <- dunnTest(ladder_fuels ~ rbr_class, data = conifer, method = "bonferroni")
+conifer_ladder_dunn
 
-conifer_labels <- c('e,f', 'e', 'f', 'e,f')
+conifer_ladder_labels <- c('e', 'f', 'e', 'e,f')
 
-conifer_plot <- rbr_ladder_plot(conifer, conifer_labels)
-conifer_plot
+conifer_ladder_plot <- rbr_ladder_plot(conifer, conifer_ladder_labels)
+conifer_ladder_plot
 
 # ============================ Evergreen comparison ============================= 
 
-evrgrn_kruskal <- kruskal.test(ladder_fuels ~ rbr_class, data = evrgrn)
-evrgrn_kruskal
+evrgrn_ladder_kruskal <- kruskal.test(ladder_fuels ~ rbr_class, data = evrgrn)
+evrgrn_ladder_kruskal
 
-evrgrn_dunn <- dunnTest(ladder_fuels ~ rbr_class, data = evrgrn, method = "bonferroni")
-evrgrn_dunn
+evrgrn_ladder_dunn <- dunnTest(ladder_fuels ~ rbr_class, data = evrgrn, method = "bonferroni")
+evrgrn_ladder_dunn
 
-evrgrn_labels <- c('e', 'e', 'e', 'f')
+evrgrn_ladder_labels <- c('e', 'e', 'e', 'f')
 
-evrgrn_plot <- rbr_ladder_plot(evrgrn, evrgrn_labels)
-evrgrn_plot
+evrgrn_ladder_plot <- rbr_ladder_plot(evrgrn, evrgrn_ladder_labels)
+evrgrn_ladder_plot
 
 # ============================ Deciduous comparison ============================= 
 
-decid_kruskal <- kruskal.test(ladder_fuels ~ rbr_class, data = decid)
-decid_kruskal
+decid_ladder_kruskal <- kruskal.test(ladder_fuels ~ rbr_class, data = decid)
+decid_ladder_kruskal
 
-decid_dunn <- dunnTest(ladder_fuels ~ rbr_class, data = decid, method = "bonferroni")
-decid_dunn
+decid_ladder_dunn <- dunnTest(ladder_fuels ~ rbr_class, data = decid, method = "bonferroni")
+decid_ladder_dunn
 
-decid_labels <- c('e', 'e', 'e')
+decid_ladder_labels <- c('e', 'e', 'e')
 
-decid_plot <- rbr_ladder_plot(decid, decid_labels)
-decid_plot
+decid_ladder_plot <- rbr_ladder_plot(decid, decid_ladder_labels)
+decid_ladder_plot
 
 # ================================ Combine plots ================================ 
 
-conifer_plot <- conifer_plot +
+conifer_ladder_plot <- conifer_ladder_plot +
   labs(x = NULL)
 
-evrgrn_plot <- evrgrn_plot +
+evrgrn_ladder_plot <- evrgrn_ladder_plot +
   labs(y = NULL, x = NULL) +
   theme(axis.text.y = element_blank())
 
-decid_plot <- decid_plot +
+decid_ladder_plot <- decid_ladder_plot +
   labs(y = NULL, x = NULL) +
   theme(axis.text.y = element_blank())
 
-fig <- ggarrange(
-  conifer_plot, evrgrn_plot, decid_plot, 
+ladder_fig <- ggarrange(
+  conifer_ladder_plot, evrgrn_ladder_plot, decid_ladder_plot, 
   nrow = 1, ncol = 3, widths = c(1, 0.8, 0.62),
-  labels = list('(a)','(b)', '(c)'), 
-  font.label = list(family = 'serif', size = 16, face = 'plain'), 
-  label.x = c(0.25, .03, 0.03))
+  labels = list('Conifer','Evergreen broadleaf', 'Deciduous broadleaf'), 
+  font.label = list(family = 'serif', size = 14, face = 'plain'), 
+  label.x = c(0.14, -0.23, -0.31))
 
-fig <- annotate_figure(
-  fig, 
+ladder_fig <- annotate_figure(
+  ladder_fig, 
   bottom = text_grob('RBR Severity', family = 'serif', size = 16))
 
-fig
+ladder_fig
 
 ggsave(
-  filename = 'figures/tubbs-fire_rbr_vs_als-ladder-fuel.png',
-  width = 6.5, 
+  filename = 'figures/tubbs-fire-rbr_vs_als-ladder-fuel.png',
+  width = 7.5, 
   height = 3.5, 
   units = 'in', 
   dpi = 400)
