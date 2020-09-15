@@ -377,7 +377,10 @@ rbr_p95_plot <- function(data_set, group_labels) {
       aes(x = rbr_class, 
           y = y, 
           label = label),
-      vjust=0) 
+      vjust=0,
+      family = 'serif', 
+      fontface = 'plain',
+      size = 4.5) 
   
   return(fig)
   
@@ -499,7 +502,10 @@ rbr_p75_plot <- function(data_set, group_labels) {
       aes(x = rbr_class, 
           y = y, 
           label = label),
-      vjust=0) 
+      vjust=0,
+      family = 'serif', 
+      fontface = 'plain',
+      size = 4.5) 
   
   return(fig)
   
@@ -648,7 +654,10 @@ rbr_ladder_plot <- function(data_set, group_labels) {
       aes(x = rbr_class, 
           y = y, 
           label = label),
-      vjust=0)
+      vjust=0,
+      family = 'serif', 
+      fontface = 'plain',
+      size = 5)
   
   return(fig)
 }
