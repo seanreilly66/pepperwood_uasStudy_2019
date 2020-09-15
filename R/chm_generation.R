@@ -66,11 +66,13 @@ rm(lib)
 
 zone <- c(2:4, 6:13)
 
-las_file <- 'data/las/{pntcld_source}/ppwd_{pntcld_source}_z{z}_f2_hnorm-{dtm_source}.las'
+uas_las_file <- 'data/las/uas/ppwd_uas_z{z}_f2_hnorm-{dtm_source}.las'
+als_las_file <- 'data/las/als/ppwd_uas_z{z}_hnorm-{dtm_source}.las'
 
 chm_res <- 0.5
 
-output <- 'data/chm/ppwd_{pntcld_source}_z{z}_f2_hnorm-{dtm_source}_chm'
+uas_output <- 'data/chm/ppwd_uas_z{z}_f2_hnorm-{dtm_source}_chm'
+als_output <- 'data/chm/ppwd_als_z{z}_hnorm-{dtm_source}_chm'
 
 # =========================== CHM generation function =========================== 
 
@@ -89,30 +91,45 @@ chm_gen <- function(las_file, res = chm_res) {
 
 }
 
-# ============= Generate CHMs from combinations of uas and als data ============= 
+# ============ Generate CHMs from uas normalized to uas and als data ============ 
 
 data_source <- c('uas', 'als')
 
-for (pntcld_source in data_source) {
-  for (dtm_source in data_source) {
+for (dtm_source in data_source) {
+  
+  message('uas height normalized to ', dtm_source )
+  
+  for (z in zone) {
+    message('Processing zone: ', z)
     
-    if (pntcld_source == 'als' & dtm_source == 'uas') {next}
+    chm <- chm_gen(las_file = glue(uas_las_file))
 
-    message(pntcld_source, ' height normalized to ', dtm_source )
-    
-    for (z in zone) {
-      message('Processing zone: ',z)
-      
-      chm <- chm_gen(las_file = glue(las_file))
-
-      writeRaster(
-        x = chm,
-        filename = glue(output),
-        datatype='FLT4S',
-        format="GTiff",
-        overwrite=TRUE)
-    }
+    writeRaster(
+      x = chm,
+      filename = glue(uas_output),
+      datatype='FLT4S',
+      format="GTiff",
+      overwrite=TRUE)
   }
+}
+
+# ================ Generate CHMs from als normalized to als data ================ 
+
+dtm_source = 'als'
+  
+message('als height normalized to als')
+
+for (z in zone) {
+  message('Processing zone: ', z)
+  
+  chm <- chm_gen(las_file = glue(als_las_file))
+  
+  writeRaster(
+    x = chm,
+    filename = glue(als_output),
+    datatype='FLT4S',
+    format="GTiff",
+    overwrite=TRUE)
 }
 
 # ===============================================================================
