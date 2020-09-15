@@ -80,7 +80,7 @@ n_value <- 0.55
 
 dtm_res <- 1
 
-output <- 'data/dtm/uas/ppwd_uas_z{z}_dtm'
+output <- 'data/dtm/uas/ppwd_uas_z{z}_f2_dtm'
      
 # =============== CSF ground finding and DTM generation ================
   
