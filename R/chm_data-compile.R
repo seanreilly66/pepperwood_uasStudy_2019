@@ -193,13 +193,20 @@ rm(zone_roi, zone_buffer, uas_chm_hnorm.uas, uas_chm_hnorm.als, als_chm_hnorm.al
 
 # ======================== Data preparation for analysis ======================== 
 
+compiled_data <- data.table::fread(output)
+
 plot_data <- compiled_data %>%
-  mutate(abs_uas_error = abs(uas_error)) %>%
+  filter_all(all_vars(!is.na(.))) %>%
+  mutate(
+    chm_error = abs(uas_chm_hnorm.als - uas_chm_hnorm.uas),
+    dtm_error = abs(uas_dtm - als_dtm),
+    chm_uas2als = uas_chm_hnorm.uas - als_chm_hnorm.als) %>%
   filter(
     veg_class%%1 < 0.05 | veg_class%%1 > 0.95,
     rbr_class%%1 < 0.05 | rbr_class%%1 > 0.95,
-    veg_class %in% c(2,3,6,7,8)) %>%
+    rbr_class <= 2) %>%
   mutate_at(c('veg_class', 'rbr_class'), round) %>%
+  filter(veg_class %in% c(2,3,6,7,8)) %>%
   mutate_at(c('veg_class', 'rbr_class'), as_factor) %>%
   mutate(veg_class = fct_recode(
     veg_class,
@@ -207,7 +214,11 @@ plot_data <- compiled_data %>%
     'Shrub' = '3',
     'Deciduous\nbroadleaf' = '6',
     'Evergreen\nbroadleaf' = '7',
-    'Conifer' = '8')) %>%
+    'Conifer' = '8')) 
+
+
+
+%>%
   mutate(rbr_class = fct_recode(
     rbr_class,
     'None' = '1',
@@ -237,22 +248,22 @@ theme_set(
 outlier_label <- plot_data  %>%
   group_by(veg_class) %>%
   summarize(
-    n_outlier = sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error))),
+    n_outlier = sum(chm_error > (quantile(chm_error, 0.75) + 1.5*IQR(chm_error))),
     p_outlier = round(
-      sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error)))/n(),
+      sum(chm_error > (quantile(chm_error, 0.75) + 1.5*IQR(chm_error)))/n(),
       2),
-    max = max(abs_uas_error, na.rm = TRUE) + 1
+    max = max(chm_error, na.rm = TRUE) + 1
   )
 
 fig <- ggplot(data = plot_data) +
   geom_boxplot(
     aes(
       x = veg_class,
-      y = abs_uas_error,
+      y = chm_error,
       fill = veg_class)) +
   labs(
     x = NULL,
-    y = 'UAS DTM absolute error (m)') +
+    y = 'UAS CHM absolute error (m)') +
   scale_fill_manual(values = c('#DDCC77', '#CC6677', '#88CCEE', '#332288', '#117733')) + 
   guides(fill = FALSE) +    
   geom_text(
@@ -269,58 +280,97 @@ fig <- ggplot(data = plot_data) +
 fig
 
 ggsave(
-  filename = 'figures/veg-class_vs_uas-dtm-abs-error.png',
+  filename = 'figures/veg-class_vs_uas-chm-abs-error.png',
   width = 6, 
   height = 4, 
   units = 'in', 
   dpi = 400)
 
-# =============== Boxplot of absolute error by Tubbs burn severity ============== 
+# ================ Boxplot of uas vs als by vegetation type ================= 
 
 outlier_label <- plot_data  %>%
-  group_by(rbr_class) %>%
+  group_by(veg_class) %>%
   summarize(
-    n_outlier = sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error))),
+    n_outlier = sum(chm_uas2als > (quantile(chm_uas2als, 0.75) + 1.5*IQR(chm_uas2als))),
     p_outlier = round(
-      sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error)))/n(),
+      sum(chm_uas2als > (quantile(chm_uas2als, 0.75) + 1.5*IQR(chm_uas2als)))/n(),
       2),
-    max = max(abs_uas_error, na.rm = TRUE) + 1
+    max = max(chm_uas2als, na.rm = TRUE) + 10
   )
 
 fig <- ggplot(data = plot_data) +
-  geom_hline(
-    yintercept = 0,
-    color = 'grey80',
-    size = 1,
-    linetype = 'dashed'
-  ) +
   geom_boxplot(
     aes(
-      x = rbr_class,
-      y = abs_uas_error,
-      fill = rbr_class)) +
+      x = veg_class,
+      y = chm_uas2als,
+      fill = veg_class)) +
   labs(
-    x = 'RBR severity',
-    y = 'UAS DTM absolute error (m)') +
-  scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
+    x = NULL,
+    y = 'UAS CHM absolute error (m)') +
+  scale_fill_manual(values = c('#DDCC77', '#CC6677', '#88CCEE', '#332288', '#117733')) + 
   guides(fill = FALSE) +    
   geom_text(
     data = outlier_label,
-    aes(x = rbr_class, 
+    aes(x = veg_class, 
         y = max, 
         label = p_outlier),
-    vjust = 0,
+    vjust=0,
     family = 'serif', 
     fontface = 'plain',
     size = 5) 
 
+fig
+
+ggsave(
+  filename = 'figures/veg-class_vs_chm-uas-als-dif.png',
+  width = 6, 
+  height = 4, 
+  units = 'in', 
+  dpi = 400)
+
+# =============== Correlation and scatter plot of chm error vs dtm error ============== 
+
+r <- cor(
+  x = plot_data$dtm_error,
+  y = plot_data$chm_error,
+  method = 'pearson') %>%
+  as.numeric() %>%
+  round(2)
+
+
+fig <- ggplot(
+  data = plot_data %>%
+    sample_frac(0.1),
+  mapping = aes(
+    x = dtm_error,
+    y = chm_error)) +
+  geom_point(
+    size = 0.8,
+    alpha = 0.3) +
+  geom_smooth(
+    method = 'lm', 
+    se = FALSE,
+    size = 1,
+    color = 'black') +
+  labs(
+    x = 'UAS DTM Absolute Error (m)',
+    y = 'UAS CHM Absolute Error (m)') + 
+  ylim(0,40) +
+  xlim(0,40) +
+  geom_text(
+    aes(x = 5, 
+        y = 35, 
+        label = glue('R = {r}')),
+    family = 'serif', 
+    fontface = 'plain',
+    size = 5.5)
 
 fig
 
 ggsave(
-  filename = 'figures/tubbs-fire-rbr_vs_uas-dtm-abs-error.png',
-  width = 6, 
-  height = 4, 
+  filename = 'figures/dtm-error_vs_chm-error.png',
+  width = 4.5, 
+  height = 4.5, 
   units = 'in', 
   dpi = 400)
 
