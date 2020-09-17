@@ -7,7 +7,7 @@ Contact Sean Reilly (sean.reilly@ouce.ox.ac.uk) for questions. Please open issue
 
 ### Table of contents:
 
-##### 1. Las file processing
+#### 1. Las file processing
 
 [**las_postprocessing.R**](https://github.com/ussreilly/pepperwood_uasStudy_2019/blob/master/R/las_postprocessing.R): Merges Pix4D las point cloud and multispectral data, reprojects point cloud, and clips to given boundary
 
