@@ -1,9 +1,13 @@
 # pepperwood_uasStudy_2019
-R analysis scripts associated with analysis of UAS point cloud data collected at Pepperwood Preserve during 2019 field campaign with Sonoma State University/University of Oxford
+R scripts associated with analysis of UAS point cloud data collected at Pepperwood Preserve during 2019 field campaign with Sonoma State University/University of Oxford
 
 Developed on a windows machine. Some scripts set up for linux cluster use. See individual script headers for additional details.
 
-Contains the following R scripts:
+Contact Sean Reilly (sean.reilly@ouce.ox.ac.uk) for questions. Please open issue notes as they arise.
+
+## Contains the following R scripts:
+
+[**chm_data-compile.R**](https://github.com/ussreilly/pepperwood_uasStudy_2019/blob/master/R/chm_data-compile.R): Generates large dataset containing uas dtm values, als dtm values, uas dtm error, vegetation classes, topography classes, and burn severities. Also generates several reference plots.
 
 laspostprocessing.R: Merges Pix4D las point cloud and multispectral data, reprojects data if given, and clips to given boundary
   
