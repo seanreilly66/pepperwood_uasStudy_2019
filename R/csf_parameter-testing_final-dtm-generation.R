@@ -1,6 +1,6 @@
 # ===============================================================================
 #
-# Cloth simulation parameter testing for optimized dtm generation - Round 1
+# Cloth simulation parameter final dtm generation
 #
 # ===============================================================================
 #
