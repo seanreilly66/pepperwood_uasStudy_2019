@@ -273,12 +273,10 @@ ladder_plot <- ggplot(
   xlim(0,1) +
   scale_color_manual(
     name = NULL,
-    values = c('#117733', '#332288', '#88CCEE')
-    # ,
-    # labels = c(glue('Conifer (R = {ladder_r$conifer_r})'),
-    #            glue('Evergreen broadleaf (R = {ladder_r$evrgrn_r})'),
-    #            glue('Deciduous broadleaf (R = {ladder_r$decid_r})'))
-    ) +
+    values = c('#117733', '#332288', '#88CCEE'),
+    labels = c(glue('Conifer (R = {ladder_r$conifer_r})'),
+               glue('Evergreen broadleaf (R = {ladder_r$evrgrn_r})'),
+               glue('Deciduous broadleaf (R = {ladder_r$decid_r})'))) +
   theme(legend.position = c(0.48,0.9))
 
 ladder_plot
@@ -805,7 +803,7 @@ rbr_ladder_plot <- function(data_set, group_labels) {
 # ============================= Conifer comparison ==============================
 
 conifer_ladder_kruskal <- kruskal.test(ladder_fuels ~ rbr_class, data = conifer)
-conifer_kruskal
+conifer_ladder_kruskal
 
 conifer_ladder_dunn <- dunnTest(ladder_fuels ~ rbr_class, data = conifer, method = "bonferroni")
 conifer_ladder_dunn
