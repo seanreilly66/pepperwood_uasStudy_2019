@@ -17,7 +17,7 @@
 #
 # Description:
 #
-# Height normalizes UAS point cloud data using both UAS and ALS dtm data. Very
+# Height normalizes UAS and ALS point cloud data using both UAS and ALS dtm data. Very
 # memory intensive, even with lascatalog implementation due to memory requirements
 # for recombining catalog tiles.
 #
