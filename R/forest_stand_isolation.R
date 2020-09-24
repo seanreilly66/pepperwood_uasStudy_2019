@@ -76,7 +76,7 @@ library(glue)
 veg_file <- 'data/site_data/veg_class/full_site/ppwd_veg_reclassified.tif'
 rbr_file <- 'data/site_data/tubbs17_rbr/full_site/ppwd_tubbs17_rbr.tif'
 
-zone_boundaries_file <- 'data/site_data/zone_shp/ppwd_zones_50m-buffer.shp'
+zone_boundaries_file <- 'data/site_data/zone_shp/ppwd_zones.shp'
 
 uas_las_file <- 'D:/data/las/uas/ppwd_uas_z{z}_f2_hnorm-als.las'
 als_las_file <- 'data/las/als/ppwd_als_z{z}_hnorm-als.las'
@@ -95,10 +95,12 @@ veg <- veg %>%
   mask(zones) %>%
   mask(
     veg %in% 6:8,
-    maskvalue = 0) %>%
-  mask(
-    rbr %in% 0:2,
-    maskvalue = 0)
+    maskvalue = 0) 
+
+# %>%
+#   mask(
+#     rbr %in% 0:3,
+#     maskvalue = 0)
 
 veg_poly <- veg %>%
   rasterToPolygons(na.rm = TRUE)
@@ -153,13 +155,27 @@ forest_clip <- function(las_file, forest_shp, zone_shp = zones) {
   
   z <- zone_shp$Zone[!is.na(over(zone_shp, forest_shp))]
   
-  las <- glue(las_file) %>%
-    readLAS(select = '') %>%
-    clip_roi(forest_shp) %>%
-    filter_poi(Z > 0) %>%
-    filter_poi(Z < 60)
+  if (length(z) == 1) {
   
-  return(las)
+    zlas <- glue(las_file) %>%
+      readLAS(select = '') %>%
+      clip_roi(forest_shp) %>%
+      filter_poi(Z > 0) %>%
+      filter_poi(Z < 60)
+  
+  } else {
+    
+    zlas <- glue(las_file) %>%
+      readLAScatalog(
+        select  = '',
+        chunk_buffer = 0) %>%
+      clip_roi(forest_shp) %>%
+      filter_poi(Z > 0) %>%
+      filter_poi(Z < 60)
+    
+  }
+  
+  return(zlas)
   
 }
 
