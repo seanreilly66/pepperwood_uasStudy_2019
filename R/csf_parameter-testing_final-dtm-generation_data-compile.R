@@ -176,6 +176,10 @@ rm(zone_roi, zone_buffer, uas_dtm, als_dtm, uas_dtm_smooth, veg_class, rbr_class
    topo_class, zone_data, als_dtm_file, col_names, rbr_file, topo_file, uas_dtm_file,
    uas_dtm_smooth_file, veg_file, z, zone, zone_buffered_shp_file)
 
+# ====================== Read in data from file if needed =======================
+
+compiled_data <- read_csv(output)
+
 # ======================== Data preparation for analysis ======================== 
 
 plot_data <- compiled_data %>%
@@ -190,9 +194,12 @@ plot_data <- compiled_data %>%
     veg_class,
     'Grass' = '2',
     'Shrub' = '3',
-    'Deciduous\nbroadleaf' = '6',
+    'Conifer' = '8',
     'Evergreen\nbroadleaf' = '7',
-    'Conifer' = '8')) %>%
+    'Deciduous\nbroadleaf' = '6')) %>%
+  mutate(veg_class = fct_relevel(
+    veg_class,
+    c('Grass', 'Shrub', 'Conifer', 'Evergreen\nbroadleaf', 'Deciduous\nbroadleaf'))) %>%
   mutate(rbr_class = fct_recode(
     rbr_class,
     'None' = '1',
@@ -226,10 +233,20 @@ outlier_label <- plot_data  %>%
     p_outlier = round(
       sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error)))/n(),
       2),
+    n_over3m = sum(abs_uas_error > 4),
+    p_over3m = round(
+      sum(abs_uas_error > 4)/n(),
+      2),
     max = max(abs_uas_error, na.rm = TRUE) + 1
   )
 
+
 fig <- ggplot(data = plot_data) +
+  geom_hline(
+    yintercept = 4,
+    color = 'grey',
+    size = 1,
+    linetype = 'dashed') +
   geom_boxplot(
     aes(
       x = veg_class,
@@ -237,75 +254,27 @@ fig <- ggplot(data = plot_data) +
       fill = veg_class)) +
   labs(
     x = NULL,
-    y = 'UAS DTM absolute error (m)') +
-  scale_fill_manual(values = c('#DDCC77', '#CC6677', '#88CCEE', '#332288', '#117733')) + 
+    y = 'UAS DAP DTM absolute error (m)') +
+  scale_fill_manual(values = c('#DDCC77', '#CC6677', '#117733', '#332288', '#88CCEE')) + 
   guides(fill = FALSE) +    
   geom_text(
     data = outlier_label,
     aes(x = veg_class, 
         y = max, 
-        label = p_outlier),
+        label = p_over3m),
     vjust=0,
     family = 'serif', 
     fontface = 'plain',
-    size = 5) 
-
+    size = 5) +
+  scale_y_continuous(
+    breaks = c(0, 4, 10, 20, 30, 40))
 
 fig
 
 ggsave(
   filename = 'figures/veg-class_vs_uas-dtm-abs-error.png',
   width = 6, 
-  height = 4, 
-  units = 'in', 
-  dpi = 400)
-
-# =============== Boxplot of absolute error by Tubbs burn severity ============== 
-
-outlier_label <- plot_data  %>%
-  group_by(rbr_class) %>%
-  summarize(
-    n_outlier = sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error))),
-    p_outlier = round(
-      sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error)))/n(),
-      2),
-    max = max(abs_uas_error, na.rm = TRUE) + 1
-  )
-
-fig <- ggplot(data = plot_data) +
-  geom_hline(
-    yintercept = 0,
-    color = 'grey80',
-    size = 1,
-    linetype = 'dashed'
-  ) +
-  geom_boxplot(
-    aes(
-      x = rbr_class,
-      y = abs_uas_error,
-      fill = rbr_class)) +
-  labs(
-    x = 'RBR severity',
-    y = 'UAS DTM absolute error (m)') +
-  scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
-  guides(fill = FALSE) +    
-  geom_text(
-    data = outlier_label,
-    aes(x = rbr_class, 
-        y = max, 
-        label = p_outlier),
-    vjust = 0,
-    family = 'serif', 
-    fontface = 'plain',
-    size = 5) 
-
-
-fig
-
-ggsave(
-  filename = 'figures/tubbs-fire-rbr_vs_uas-dtm-abs-error.png',
-  width = 6, 
-  height = 4, 
+  height = 4.5, 
   units = 'in', 
   dpi = 400)
 
