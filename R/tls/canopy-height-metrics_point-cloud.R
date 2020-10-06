@@ -56,11 +56,11 @@ library(glue)
 
 # ================================= User inputs ================================
 
-tls_las_folder <- 'C:/'
+tls_las_folder <- 'D:/R'
 tls_las_pattern <- 'c{c}_tls_p{p}'
 
 als_las_folder <- 'D:/R'
-tls_las_pattern <- 'c{c}_als_p{p}'  
+als_las_pattern <- 'c{c}_als_p{p}'  
 
 campaign = 6
 plot = 1
@@ -119,7 +119,10 @@ for (c in campaign) {
     
     message('Processing campaign ', c, ' plot ', p)
     
-    tls_z <- list.files(tls_las_folder, pattern = glue(tls_las_pattern), recursive = TRUE)
+    tls_z <- list.files(
+      tls_las_folder, 
+      pattern = glue(tls_las_pattern), 
+      full.names = TRUE)
     
     if (length(tls_z) == 0) {next}
     
@@ -131,7 +134,10 @@ for (c in campaign) {
     
     names(tls_metrics) <- paste0('tls_', names(tls_metrics))
     
-    als_z <- glue(als_las_file)  %>%
+    als_z <- list.files(
+      als_las_folder, 
+      pattern = glue(als_las_pattern), 
+      full.names = TRUE) %>%
       readLAS(select = '') %>%
       .$Z
     
