@@ -65,34 +65,38 @@ height_df <- bind_rows(
   read.csv(decid_uas) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Deciduous broadleaf') %>%
-    add_column(data_type = 'UAS'),
+    add_column(veg_class = 'Deciduous\nbroadleaf') %>%
+    add_column(data_type = 'UAS DAP'),
   read.csv(decid_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Deciduous broadleaf') %>%
+    add_column(veg_class = 'Deciduous\nbroadleaf') %>%
     add_column(data_type = 'ALS'),
   read.csv(evrgrn_uas) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Evergreen broadleaf') %>%
-    add_column(data_type = 'UAS'),
+    add_column(veg_class = 'Evergreen\nbroadleaf') %>%
+    add_column(data_type = 'UAS DAP'),
   read.csv(evrgrn_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Evergreen broadleaf') %>%
+    add_column(veg_class = 'Evergreen\nbroadleaf') %>%
     add_column(data_type = 'ALS'),
   read.csv(conifer_uas) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Conifer') %>%
-    add_column(data_type = 'UAS'),
+    add_column(data_type = 'UAS DAP'),
   read.csv(conifer_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Conifer') %>%
     add_column(data_type = 'ALS')) %>%
-  mutate_at(c('veg_class', 'data_type'), as.factor)
+  mutate_at(c('veg_class', 'data_type'), as.factor) %>%
+  mutate(veg_class = fct_relevel(
+    veg_class,
+    c('Conifer', 'Evergreen\nbroadleaf', 'Deciduous\nbroadleaf')
+  ))
 
 rm(decid_uas, decid_als, evrgrn_uas, evrgrn_als, conifer_uas, conifer_als)
 
@@ -139,9 +143,9 @@ fig
 
 ggsave(
   filename = 'figures/height_violin.png',
-  width = 6.5, 
-  height = 3.5, 
-  units = 'in', 
+  width = 5,
+  height = 3.5,
+  units = 'in',
   dpi = 400)
 
 # ===============================================================================
