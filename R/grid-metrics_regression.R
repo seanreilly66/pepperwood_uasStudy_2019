@@ -232,8 +232,6 @@ sig_asterisk <- function(p_val) {
 
 lm_low_rbr <- lm_low_rbr %>%
   mutate(metric = str_extract(metric, '(?<=d_).+')) %>%
-  # filter(metric %in% c('ladder_fuel', 'd00', 'd01', 'd02', 'zmax', 'zmean', 'zq5', 'zq25', 'zq50',
-  #                      'zq75', 'zq95', 'zsd', 'zskew', 'zkurt')) %>%
   mutate_at(c(2,3,5:7,9:11,13), round, digits = 2) %>%
   mutate(conifer_coef = glue('{conifer_coef}({conifer_se}){sig_asterisk(conifer_p)}')) %>%
   mutate(decid_coef = glue('{decid_coef}({decid_se}){sig_asterisk(decid_p)}')) %>%
@@ -267,16 +265,16 @@ ladder_plot <- ggplot(
     se = FALSE,
     size = 1) +
   labs(
-    x = 'UAS ladder fuel',
+    x = 'UAS DAP ladder fuel',
     y = 'ALS ladder fuel') + 
   ylim(0,1) +
   xlim(0,1) +
   scale_color_manual(
     name = NULL,
     values = c('#117733', '#332288', '#88CCEE'),
-    labels = c(glue('Conifer (R = {ladder_r$conifer_r})'),
-               glue('Evergreen broadleaf (R = {ladder_r$evrgrn_r})'),
-               glue('Deciduous broadleaf (R = {ladder_r$decid_r})'))) +
+    labels = c(glue('Conifer (r = {ladder_r$conifer_r})'),
+               glue('Evergreen broadleaf (r = {ladder_r$evrgrn_r})'),
+               glue('Deciduous broadleaf (r = {ladder_r$decid_r})'))) +
   theme(legend.position = c(0.48,0.9))
 
 ladder_plot
