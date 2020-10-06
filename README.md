@@ -1,4 +1,4 @@
-# pepperwood_uasStudy_2019
+# Pepperwood 2019 UAS Study
 R scripts associated with analysis of UAS point cloud data collected at Pepperwood Preserve during 2019 field campaign with Sonoma State University/University of Oxford
 
 Developed on a windows machine. Some scripts set up for linux cluster use. See individual script headers for additional details.
