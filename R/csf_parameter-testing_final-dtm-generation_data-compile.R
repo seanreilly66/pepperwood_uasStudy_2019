@@ -186,26 +186,19 @@ plot_data <- compiled_data %>%
   mutate(abs_uas_error = abs(uas_error)) %>%
   filter(
     veg_class%%1 < 0.05 | veg_class%%1 > 0.95,
-    rbr_class%%1 < 0.05 | rbr_class%%1 > 0.95,
     veg_class %in% c(2,3,6,7,8)) %>%
-  mutate_at(c('veg_class', 'rbr_class'), round) %>%
-  mutate_at(c('veg_class', 'rbr_class'), as_factor) %>%
+  mutate_at(c('veg_class'), round) %>%
+  mutate_at(c('veg_class'), as_factor) %>%
   mutate(veg_class = fct_recode(
     veg_class,
     'Grass' = '2',
     'Shrub' = '3',
-    'Conifer' = '8',
+    'Deciduous\nbroadleaf' = '6',
     'Evergreen\nbroadleaf' = '7',
-    'Deciduous\nbroadleaf' = '6')) %>%
+    'Conifer' = '8')) %>%
   mutate(veg_class = fct_relevel(
     veg_class,
-    c('Grass', 'Shrub', 'Conifer', 'Evergreen\nbroadleaf', 'Deciduous\nbroadleaf'))) %>%
-  mutate(rbr_class = fct_recode(
-    rbr_class,
-    'None' = '1',
-    'Low' = '2',
-    'Med' = '3',
-    'High' = '4'))
+    c('Grass', 'Shrub', 'Conifer', 'Evergreen\nbroadleaf', 'Deciduous\nbroadleaf')))
 
 # ============================== Set ggplot theme =============================== 
 
@@ -226,6 +219,8 @@ theme_set(
 
 # ================ Boxplot of absolute error by vegetation type ================= 
 
+height_threshold <- 4
+
 outlier_label <- plot_data  %>%
   group_by(veg_class) %>%
   summarize(
@@ -233,9 +228,9 @@ outlier_label <- plot_data  %>%
     p_outlier = round(
       sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error)))/n(),
       2),
-    n_over3m = sum(abs_uas_error > 4),
-    p_over3m = round(
-      sum(abs_uas_error > 4)/n(),
+    n_gtthreshold = sum(abs_uas_error > height_threshold),
+    p_gtthreshold = round(
+      sum(abs_uas_error > height_threshold)/n(),
       2),
     max = max(abs_uas_error, na.rm = TRUE) + 1
   )
@@ -243,7 +238,7 @@ outlier_label <- plot_data  %>%
 
 fig <- ggplot(data = plot_data) +
   geom_hline(
-    yintercept = 4,
+    yintercept = height_threshold,
     color = 'grey',
     size = 1,
     linetype = 'dashed') +
@@ -261,13 +256,13 @@ fig <- ggplot(data = plot_data) +
     data = outlier_label,
     aes(x = veg_class, 
         y = max, 
-        label = p_over3m),
+        label = p_gtthreshold),
     vjust=0,
     family = 'serif', 
     fontface = 'plain',
     size = 5) +
   scale_y_continuous(
-    breaks = c(0, 4, 10, 20, 30, 40))
+    breaks = c(0, height_threshold, 10, 20, 30, 40))
 
 fig
 
