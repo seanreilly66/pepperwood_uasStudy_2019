@@ -263,12 +263,16 @@ fig1 <- ggarrange(
   nrow = 2,
   ncol = 3,
   widths = c(1, 1, 0.75),
+  labels = c('A)', 'B)', 'C)', 'D)', 'E)'),
+  label.x = c(0.2, 0.2, 0.25,0.2,0.2),
   align = "hv")
 
 fig1 <- annotate_figure(
   fig1, 
   left = text_grob('DTM RMSE (m)', family = 'serif', size = 16, rot = 90),
   top = text_grob('Round 1', family = 'serif', size = 18))
+
+fig1
 
 rm(rnd, csf_error, cloth_resolution, time_step, rigidness, class_threshold, ndvi)
 
@@ -329,11 +333,15 @@ fig2 <- ggarrange(
   nrow = 2,
   ncol = 3,
   widths = c(1, 1, 0.75),
+  labels = c('F)', 'G)', 'Delete', 'H)', 'I)'),
+  label.x = c(0.2, 0.2, 0.25, 0.2,0.21),
   align = "hv")
 
 fig2 <- annotate_figure(fig2, 
                        left = text_grob('DTM RMSE (m)', family = 'serif', size = 16, rot = 90),
                        top = text_grob('Round 2', family = 'serif', size = 18))
+
+fig2
 
 rm(rnd, csf_error, cloth_resolution, time_step, rigidness, class_threshold, ndvi)
 
@@ -347,6 +355,6 @@ fig <- ggarrange(
 
 fig
 
-ggsave(filename = glue('figures/csf_parameter-testing.png'), width = 8.5, height = 10, units = 'in', dpi = 400)
+ggsave(filename = glue('figures/csf_parameter-testing.png'), width = 8.5, height = 10, units = 'in', dpi = 700)
 
 # ===============================================================================
