@@ -71,7 +71,8 @@ theme_set(
         legend.text = element_text(size = 14),
         legend.key = element_blank(),
         legend.spacing = unit(0, "cm"),
-        legend.margin = margin(0,5,0,5)
+        legend.margin = margin(0,5,0,5),
+        title = element_text(size = 12.8)
   )
 )
 
@@ -265,7 +266,7 @@ ladder_plot <- ggplot(
     se = FALSE,
     size = 1) +
   labs(
-    x = 'UAS DAP ladder fuel',
+    x = 'UAS-SfM ladder fuel',
     y = 'ALS ladder fuel') + 
   ylim(0,1) +
   xlim(0,1) +
@@ -284,7 +285,7 @@ ggsave(
   width = 4.5, 
   height = 4.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 
 # ===============================================================================
@@ -375,8 +376,8 @@ rbr_p95_plot <- function(data_set, group_labels) {
         y = zq95_dif,
         fill = rbr_class)) +
     labs(
-      x = 'RBR severity',
-      y = bquote(''~Delta ~P[95]~' Height (m)')) +
+      x = 'RBR fire severity',
+      y = bquote(''~Delta ~P[95]~' height (m)')) +
     ylim(-30, 10) +
     scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
     guides(fill = FALSE) +
@@ -458,7 +459,7 @@ p95_fig <- ggarrange(
 
 p95_fig <- annotate_figure(
   p95_fig, 
-  bottom = text_grob('RBR Severity', family = 'serif', size = 16))
+  bottom = text_grob('RBR fire severity', family = 'serif', size = 16))
 
 p95_fig
 
@@ -467,7 +468,7 @@ ggsave(
   width = 7, 
   height = 3.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 rm(decid_p95_dunn, decid_p95_kruskal, evrgrn_p95_dunn, evrgrn_p95_kruskal, 
    conifer_p95_dunn, conifer_p95_kruskal, rbr_p95_plot)
@@ -500,8 +501,8 @@ rbr_p75_plot <- function(data_set, group_labels) {
         y = zq75_dif,
         fill = rbr_class)) +
     labs(
-      x = 'RBR severity',
-      y = bquote(''~Delta ~P[75]~' Height (m)')) +
+      x = 'RBR fire severity',
+      y = bquote(''~Delta ~P[75]~' height (m)')) +
     ylim(-30, 10) +
     scale_fill_manual(values = c('#828282', '#ffffbe', '#ffaa00', '#c80000')) + 
     guides(fill = FALSE) +
@@ -589,7 +590,7 @@ ggsave(
   width = 7, 
   height = 3.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 rm(decid_p75_dunn, decid_p75_kruskal, evrgrn_p75_dunn, evrgrn_p75_kruskal, 
    conifer_p75_dunn, conifer_p75_kruskal, rbr_p75_plot)
@@ -617,7 +618,7 @@ rbr_ndvi_plot <- function(data_set, group_labels) {
         y = p75_ndvi,
         fill = rbr_class)) +
     labs(
-      x = 'RBR severity',
+      x = 'RBR fire severity',
       y = bquote('Post-fire '~P[75]~' NDVI')) +
     scale_y_continuous(
       breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
@@ -708,7 +709,7 @@ ggsave(
   width = 7, 
   height = 3.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 rm(decid_ndvi_dunn, decid_ndvi_kruskal, evrgrn_ndvi_dunn, evrgrn_ndvi_kruskal, 
    conifer_ndvi_dunn, conifer_ndvi_kruskal, rbr_ndvi_plot)
@@ -716,13 +717,16 @@ rm(decid_ndvi_dunn, decid_ndvi_kruskal, evrgrn_ndvi_dunn, evrgrn_ndvi_kruskal,
 # ============================ Compile stacked plot =============================
 
 conifer_p95_plot <- conifer_p95_plot +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) +
+  ggtitle('Conifer')
 
 evrgrn_p95_plot <- evrgrn_p95_plot +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) +
+  ggtitle('Evergreen broadleaf')
 
 decid_p95_plot <- decid_p95_plot +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) +
+  ggtitle('Deciduous broadleaf')
 
 conifer_p75_plot <- conifer_p75_plot +
   theme(axis.text.x = element_blank())
@@ -738,13 +742,20 @@ p_fig <- ggarrange(
   conifer_p75_plot, evrgrn_p75_plot, decid_p75_plot,
   conifer_ndvi_plot, evrgrn_ndvi_plot, decid_ndvi_plot,
   nrow = 3, ncol = 3, widths = c(1, 0.8, 0.62),
-  labels = list('Conifer','Evergreen broadleaf', 'Deciduous broadleaf'), 
-  font.label = list(family = 'serif', size = 14, face = 'plain'), 
-  label.x = c(0.17, -0.23, -0.31))
+  labels = list('A)', 'B)', 'C)', 
+                'D)', 'E)', 'F)', 
+                'G)', 'H)', 'I)'), 
+  font.label = list(family = 'serif', face = 'plain'),
+  label.x = c(0.21, 0.03, 0.05,
+              0.21, 0.03, 0.05,
+              0.21, 0.03, 0.06),
+  label.y = c(0.89, 0.89, 0.89,
+              1, 1, 1,
+              1, 1, 1))
 
 p_fig <- annotate_figure(
   p_fig, 
-  bottom = text_grob('RBR Severity', family = 'serif', size = 16))
+  bottom = text_grob('RBR fire severity', family = 'serif', size = 16))
 
 p_fig
 
@@ -753,7 +764,7 @@ ggsave(
   width = 7.5,
   height = 7.5,
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 # ===============================================================================
 # ==================== Ladder fuels impact on fire severity ===================== 
@@ -771,7 +782,8 @@ rbr_ladder_plot <- function(data_set, group_labels) {
     ) %>%
     add_column(label = group_labels)
   
-  fig <- ggplot(data = data_set) +
+  fig <- ggplot(data = data_set %>%
+                  filter(ladder_fuels < 0.99)) +
     geom_boxplot(
       aes(
         x = rbr_class,
@@ -859,7 +871,7 @@ ladder_fig <- ggarrange(
 
 ladder_fig <- annotate_figure(
   ladder_fig, 
-  bottom = text_grob('RBR Severity', family = 'serif', size = 16))
+  bottom = text_grob('RBR fire severity', family = 'serif', size = 16))
 
 ladder_fig
 
@@ -868,6 +880,6 @@ ggsave(
   width = 7.5, 
   height = 3.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 # ===============================================================================
