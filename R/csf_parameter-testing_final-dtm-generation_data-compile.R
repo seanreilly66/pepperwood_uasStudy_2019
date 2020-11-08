@@ -249,7 +249,7 @@ fig <- ggplot(data = plot_data) +
       fill = veg_class)) +
   labs(
     x = NULL,
-    y = 'UAS DAP DTM absolute error (m)') +
+    y = 'UAS-SfM DTM absolute error (m)') +
   scale_fill_manual(values = c('#DDCC77', '#CC6677', '#117733', '#332288', '#88CCEE')) + 
   guides(fill = FALSE) +    
   geom_text(
@@ -271,6 +271,6 @@ ggsave(
   width = 6, 
   height = 4.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 # ===============================================================================
