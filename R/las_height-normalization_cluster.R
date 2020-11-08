@@ -74,7 +74,10 @@ zone = c(2:4, 6:13)
 uas_las_file <- 'data/las/uas/ppwd_uas_z{z}_f2_reg2als.las'
 dtm_file <- 'data/dtm/{dtm_source}/ppwd_{dtm_source}_z{z}_dtm.tif'
 
-las_output <- 'data/las/uas/ppwd_uas_z{z}_f2_hnorm-{dtm_source}.las'
+als_las_file <- 'data/las/als/ppwd_als_z{z}.las'
+
+uas_output <- 'data/las/uas/ppwd_uas_z{z}_f2_hnorm-{dtm_source}.las'
+als_output <- 'data/las/als/ppwd_als_z{z}_hnorm-{dtm_source}.las'
 
 # ============= LAS height normalization and noise filter function ============== 
 
@@ -109,7 +112,7 @@ for (z in zone) {
     dtm = glue(dtm_file), 
     sensitivity = 1.2)
   
-  writeLAS(uas_hnorm2als, glue(las_output))
+  writeLAS(uas_hnorm2als, glue(uas_output))
   
 }
 
@@ -130,10 +133,31 @@ for (z in zone) {
     dtm = glue(dtm_file), 
     sensitivity = 1.2)
   
-  writeLAS(uas_hnorm2als, glue(las_output))
+  writeLAS(uas_hnorm2als, glue(uas_output))
   
 }
 
 rm(z, uas_hnorm2als)
+
+# ======================== ALS height normalized to ALS ========================= 
+
+dtm_source = 'als'
+
+message('Normalizing to ', dtm_source )
+
+for (z in zone) {
+  
+  message('Processing zone: ', z)
+  
+  als_hnorm2als <- normnoise(
+    las_file = glue(als_las_file),
+    dtm = glue(dtm_file), 
+    sensitivity = 1.2)
+  
+  writeLAS(als_hnorm2als, glue(als_output))
+  
+}
+
+rm(z, als_hnorm2als)
 
 # ===============================================================================
