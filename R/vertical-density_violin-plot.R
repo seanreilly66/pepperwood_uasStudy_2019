@@ -66,7 +66,7 @@ height_df <- bind_rows(
     dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Deciduous\nbroadleaf') %>%
-    add_column(data_type = 'UAS DAP'),
+    add_column(data_type = 'UAS-SfM'),
   read.csv(decid_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
@@ -76,7 +76,7 @@ height_df <- bind_rows(
     dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Evergreen\nbroadleaf') %>%
-    add_column(data_type = 'UAS DAP'),
+    add_column(data_type = 'UAS-SfM'),
   read.csv(evrgrn_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
@@ -86,7 +86,7 @@ height_df <- bind_rows(
     dplyr::select(2) %>%
     rename(Z = 1) %>%
     add_column(veg_class = 'Conifer') %>%
-    add_column(data_type = 'UAS DAP'),
+    add_column(data_type = 'UAS-SfM'),
   read.csv(conifer_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
@@ -146,6 +146,6 @@ ggsave(
   width = 5,
   height = 3.5,
   units = 'in',
-  dpi = 400)
+  dpi = 700)
 
 # ===============================================================================
