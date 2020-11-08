@@ -267,7 +267,7 @@ fig <- ggplot(data = plot_data) +
       fill = veg_class)) +
   labs(
     x = NULL,
-    y = 'UAS DAP CHM absolute error (m)') +
+    y = 'UAS-SfM CHM absolute error (m)') +
   scale_fill_manual(values = c('#DDCC77', '#CC6677', '#117733', '#332288', '#88CCEE')) + 
   guides(fill = FALSE) +    
   geom_text(
@@ -290,7 +290,7 @@ ggsave(
   width = 6, 
   height = 4.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 # =============== Correlation and scatter plot of chm error vs dtm error ============== 
 
@@ -311,8 +311,8 @@ fig <- ggplot(
     size = 0.6,
     alpha = 0.2) +
   labs(
-    x = 'UAS DAP DTM absolute error (m)',
-    y = 'UAS DAP CHM absolute error (m)') + 
+    x = 'UAS-SfM DTM absolute error (m)',
+    y = 'UAS-SfM CHM absolute error (m)') + 
   ylim(0,30) +
   xlim(0,40) +
   geom_text(
@@ -323,13 +323,13 @@ fig <- ggplot(
     fontface = 'plain',
     size = 5.5)
 
-fig
+# fig
 
 ggsave(
   filename = 'figures/dtm-error_vs_chm-error.png',
   width = 6, 
   height = 4.5, 
   units = 'in', 
-  dpi = 400)
+  dpi = 700)
 
 # ===============================================================================
