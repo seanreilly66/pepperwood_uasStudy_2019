@@ -47,6 +47,14 @@
 #
 # Needs user input for output file location and format (currently hard coded)
 #
+# Intermittent error using temporary system files for lascatalog output (line 106)
+# If error arrises saying there is a problem with a chunk, can be circumvented by
+# replacing temporary system file in line 106 with a folder/file name. This will
+# save the chunk files to this new location and they can be deleted after processing
+# is completed. 
+# Error may have been fixed due to change in temporary file call. If still encountered,
+# let the author know.
+#
 # ===============================================================================
 
 lib = NULL
@@ -103,7 +111,7 @@ ctg_normnoise <- function(dtm, ctg_las_file) {
 
   opt_chunk_size(ctg) <- 150
   opt_chunk_buffer(ctg) <- 30
-  opt_output_files(ctg) <- glue('{tempfile()}_{{ID}}')
+  opt_output_files(ctg) <- tempfile(pattern = 'file_{ID}_')
   opt_chunk_alignment(ctg) <- c(ctg$Min.X,ctg$Min.Y)
 
   ctg <- catalog_apply(
