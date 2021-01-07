@@ -227,11 +227,11 @@ outlier_label <- plot_data  %>%
     n_outlier = sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error))),
     p_outlier = round(
       sum(abs_uas_error > (quantile(abs_uas_error, 0.75) + 1.5*IQR(abs_uas_error)))/n(),
-      2),
+      2)*100,
     n_gtthreshold = sum(abs_uas_error > height_threshold),
     p_gtthreshold = round(
       sum(abs_uas_error > height_threshold)/n(),
-      2),
+      2)*100,
     max = max(abs_uas_error, na.rm = TRUE) + 1
   )
 
@@ -256,7 +256,7 @@ fig <- ggplot(data = plot_data) +
     data = outlier_label,
     aes(x = veg_class, 
         y = max, 
-        label = p_gtthreshold),
+        label = glue('{p_gtthreshold}%')),
     vjust=0,
     family = 'serif', 
     fontface = 'plain',
@@ -267,7 +267,7 @@ fig <- ggplot(data = plot_data) +
 fig
 
 ggsave(
-  filename = 'figures/veg-class_vs_uas-dtm-abs-error.png',
+  filename = 'figures/fig4_dtm_error_by_veg_class.png',
   width = 6, 
   height = 4.5, 
   units = 'in', 
