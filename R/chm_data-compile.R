@@ -318,7 +318,7 @@ fig <- ggplot(
   geom_text(
     aes(x = 2, 
         y = 29, 
-        label = glue('r = {r}')),
+        label = glue('r = +{r}')),
     family = 'serif', 
     fontface = 'plain',
     size = 5.5)
@@ -326,7 +326,7 @@ fig <- ggplot(
 # fig
 
 ggsave(
-  filename = 'figures/dtm-error_vs_chm-error.png',
+  filename = 'figures/fig6_chm_vs_dtm_error.png',
   width = 6, 
   height = 4.5, 
   units = 'in', 
