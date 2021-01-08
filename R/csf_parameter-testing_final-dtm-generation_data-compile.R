@@ -178,27 +178,42 @@ rm(zone_roi, zone_buffer, uas_dtm, als_dtm, uas_dtm_smooth, veg_class, rbr_class
 
 # ====================== Read in data from file if needed =======================
 
-compiled_data <- read_csv(output)
+# compiled_data <- read_csv(output)
 
 # ======================== Data preparation for analysis ======================== 
 
 plot_data <- compiled_data %>%
   mutate(abs_uas_error = abs(uas_error)) %>%
-  filter(
-    veg_class%%1 < 0.05 | veg_class%%1 > 0.95,
-    veg_class %in% c(2,3,6,7,8)) %>%
+  filter(veg_class %% 1 < 0.05 | veg_class %% 1 > 0.95,
+         veg_class %in% c(2, 3, 6, 7, 8)) %>%
   mutate_at(c('veg_class'), round) %>%
-  mutate_at(c('veg_class'), as_factor) %>%
-  mutate(veg_class = fct_recode(
-    veg_class,
-    'Grass' = '2',
-    'Shrub' = '3',
-    'Deciduous\nbroadleaf' = '6',
-    'Evergreen\nbroadleaf' = '7',
-    'Conifer' = '8')) %>%
+  mutate_at(c('veg_class'), as_factor)
+
+plot_data <- plot_data %>%
+  add_row(plot_data %>%
+            filter(veg_class %in% 6:8) %>%
+            mutate(veg_class = 'All forests')) %>%
+  mutate(
+    veg_class = fct_recode(
+      veg_class,
+      'Grass' = '2',
+      'Shrub' = '3',
+      'Deciduous\nbroadleaf\nforest' = '6',
+      'Evergreen\nbroadleaf\nforest' = '7',
+      'Conifer\nforest' = '8'
+    )
+  ) %>%
   mutate(veg_class = fct_relevel(
     veg_class,
-    c('Grass', 'Shrub', 'Conifer', 'Evergreen\nbroadleaf', 'Deciduous\nbroadleaf')))
+    c(
+      'Grass',
+      'Shrub',
+      'All forests',
+      'Conifer\nforest',
+      'Evergreen\nbroadleaf\nforest',
+      'Deciduous\nbroadleaf\nforest'
+    )
+  ))
 
 # ============================== Set ggplot theme =============================== 
 
@@ -250,7 +265,7 @@ fig <- ggplot(data = plot_data) +
   labs(
     x = NULL,
     y = 'UAS-SfM DTM absolute error (m)') +
-  scale_fill_manual(values = c('#DDCC77', '#CC6677', '#117733', '#332288', '#88CCEE')) + 
+  scale_fill_manual(values = c('#DDCC77', '#CC6677', 'white', '#117733', '#332288', '#88CCEE')) + 
   guides(fill = FALSE) +    
   geom_text(
     data = outlier_label,
