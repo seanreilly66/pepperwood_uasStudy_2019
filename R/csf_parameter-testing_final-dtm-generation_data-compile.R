@@ -178,15 +178,15 @@ rm(zone_roi, zone_buffer, uas_dtm, als_dtm, uas_dtm_smooth, veg_class, rbr_class
 
 # ====================== Read in data from file if needed =======================
 
-# compiled_data <- read_csv(output)
+compiled_data <- read_csv(output)
 
 # ======================== Data preparation for analysis ======================== 
 
 plot_data <- compiled_data %>%
   mutate(abs_uas_error = abs(uas_error)) %>%
-  filter(veg_class %% 1 < 0.05 | veg_class %% 1 > 0.95,
-         veg_class %in% c(2, 3, 6, 7, 8)) %>%
-  mutate_at(c('veg_class'), round) %>%
+  filter(veg_class %% 1 < 0.05 | veg_class %% 1 > 0.95) %>% 
+  mutate_at('veg_class', round) %>%
+  filter(veg_class %in% c(2, 3, 6, 7, 8)) %>%
   mutate_at(c('veg_class'), as_factor)
 
 plot_data <- plot_data %>%
@@ -208,10 +208,10 @@ plot_data <- plot_data %>%
     c(
       'Grass',
       'Shrub',
-      'All forests',
       'Conifer\nforest',
       'Evergreen\nbroadleaf\nforest',
-      'Deciduous\nbroadleaf\nforest'
+      'Deciduous\nbroadleaf\nforest',
+      'All forests'
     )
   ))
 
@@ -265,7 +265,7 @@ fig <- ggplot(data = plot_data) +
   labs(
     x = NULL,
     y = 'UAS-SfM DTM absolute error (m)') +
-  scale_fill_manual(values = c('#DDCC77', '#CC6677', 'white', '#117733', '#332288', '#88CCEE')) + 
+  scale_fill_manual(values = c('#DDCC77', '#CC6677', '#117733', '#332288', '#88CCEE', 'white')) + 
   guides(fill = FALSE) +    
   geom_text(
     data = outlier_label,
@@ -283,7 +283,7 @@ fig
 
 ggsave(
   filename = 'figures/fig4_dtm_error_by_veg_class.png',
-  width = 6, 
+  width = 6.5, 
   height = 4.5, 
   units = 'in', 
   dpi = 700)
