@@ -65,40 +65,48 @@ height_df <- bind_rows(
   read.csv(decid_uas) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Deciduous\nbroadleaf') %>%
+    add_column(veg_class = 'Deciduous\nbroadleaf\nforest') %>%
     add_column(data_type = 'UAS-SfM'),
   read.csv(decid_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Deciduous\nbroadleaf') %>%
+    add_column(veg_class = 'Deciduous\nbroadleaf\nforest') %>%
     add_column(data_type = 'ALS'),
   read.csv(evrgrn_uas) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Evergreen\nbroadleaf') %>%
+    add_column(veg_class = 'Evergreen\nbroadleaf\nforest') %>%
     add_column(data_type = 'UAS-SfM'),
   read.csv(evrgrn_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Evergreen\nbroadleaf') %>%
+    add_column(veg_class = 'Evergreen\nbroadleaf\nforest') %>%
     add_column(data_type = 'ALS'),
   read.csv(conifer_uas) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Conifer') %>%
+    add_column(veg_class = 'Conifer\nforest') %>%
     add_column(data_type = 'UAS-SfM'),
   read.csv(conifer_als) %>%
     dplyr::select(2) %>%
     rename(Z = 1) %>%
-    add_column(veg_class = 'Conifer') %>%
-    add_column(data_type = 'ALS')) %>%
-  mutate_at(c('veg_class', 'data_type'), as.factor) %>%
-  mutate(veg_class = fct_relevel(
-    veg_class,
-    c('Conifer', 'Evergreen\nbroadleaf', 'Deciduous\nbroadleaf')
-  ))
+    add_column(veg_class = 'Conifer\nforest') %>%
+    add_column(data_type = 'ALS'))
 
 rm(decid_uas, decid_als, evrgrn_uas, evrgrn_als, conifer_uas, conifer_als)
+
+height_df <- height_df %>%
+  add_row(height_df %>%
+            mutate(veg_class = 'All forests')) %>%
+    mutate_at(c('veg_class', 'data_type'), as.factor) %>%
+  mutate(
+    veg_class = fct_relevel(veg_class,
+      'All forests',
+      'Conifer\nforest',
+      'Evergreen\nbroadleaf\nforest',
+      'Deciduous\nbroadleaf\nforest'
+    )
+  )
 
 # ============================== ggplot theme set =============================== 
 
@@ -142,8 +150,8 @@ fig <- ggplot(
 fig
 
 ggsave(
-  filename = 'figures/height_violin.png',
-  width = 5,
+  filename = 'figures/fig7_height_violin.png',
+  width = 5.5,
   height = 3.5,
   units = 'in',
   dpi = 700)
