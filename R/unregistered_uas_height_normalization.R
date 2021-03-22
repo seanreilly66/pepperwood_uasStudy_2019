@@ -38,6 +38,7 @@ library(tidyverse)
 library(glue)
 library(sf)
 library(ggpubr)
+library(parallel)
 
 # ================================= User inputs ================================
 
@@ -62,12 +63,45 @@ grndlas_output <-
 
 grnddf_output <- 'data/icp_free_analysis/ground_points/ppwd_noicp_grndpts.csv'
 
+hnorm_las_output <- 'data/las/uas/ppwd_uas_z{z}_f2_noicp_hnrom-dtm.las'
+
 # =========================== Isolate ground points ============================
 
+grnd <- function(z, zone_shp, uas, dtm, grnddf, zone_shp, output) {
+  
+  library(lidR)
+  library(tidyverse)
+  library(glue)
+  library(sf)
+  
+  zone_shp <- read_sf(zone_shp) %>%
+    st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs')) %>%
+    filter(zone == z)
+  
+  if (zone %in% 6:7) {
+    las <- glue(uas, z = 67) %>%
+      readLAS(select = '') 
+    red <- glue(spectral_file, band = 'red', z = 67) %>%
+      raster()
+    nir <- glue(spectral_file, band = 'nir', z = 67) %>%
+      raster()
+  } else {
+    las <- glue(uas, z = zone) %>%
+      readLAS(select = '') 
+    red <- glue(spectral_file, band = 'red') %>%
+      raster()
+    nir <- glue(spectral_file, band = 'nir') %>%
+      raster()
+  }
+
+  las <- las %>%
+    clip_roi(zone_shop)
+  
+  writeLAS(las, glue(output, z = zone))
+  
+}
 zone_shp <- read_sf(zone_shp_file) %>%
   st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs'))
-
-memory.size(max = TRUE)
 
 for (z in zone) {
   
@@ -78,17 +112,25 @@ for (z in zone) {
       readLAS(select = '') %>%
       clip_roi(zone_shp %>%
                  filter(Zone == z))
+    
+    red <- glue(spectral_file, band = 'red', z = 67) %>%
+      raster()
+    nir <- glue(spectral_file, band = 'nir', z = 67) %>%
+      raster()
+    
   } else {
     las <- glue(uas_file) %>%
       readLAS(select = '') %>%
       clip_roi(zone_shp %>%
                  filter(Zone == z))
+    
+    red <- glue(spectral_file, band = 'red') %>%
+      raster()
+    nir <- glue(spectral_file, band = 'nir') %>%
+      raster()
+    
   }
   
-  red <- glue(spectral_file, band = 'red') %>%
-    raster()
-  nir <- glue(spectral_file, band = 'nir') %>%
-    raster()
   ndvi <- (nir - red) / (nir + red)
   
   las <- las %>%
@@ -115,8 +157,8 @@ for (z in zone) {
   
 }
 
-rm(zone_shp, ct_value, cr_value, r_value, ts_value, n_value, spectral_file, z, 
-   zone_shp_file)
+rm(ct_value, cr_value, r_value, ts_value, n_value, spectral_file, z, 
+   zone_shp_file, ndvi, nir, red)
 
 # ========================== Generate ground dataset ===========================
 
@@ -155,7 +197,7 @@ for (z in zone) {
 
 write_csv(grnd_pts, grnddf_output)
 
-rm(als_dtm, buffered_shp_file, uas_file, grndlas_output, las, dtm, buffered_shp)
+rm(buffered_shp_file, grndlas_output, las, dtm, buffered_shp)
 gc()
 
 # ================================ ggplot theme ================================
@@ -178,21 +220,92 @@ theme_set(
 
 # ====================== Plot uas to als dtm relationship ====================== 
 
-# if (!exists('grnd_pts')) {
-#   grnd_pts <- read_csv(grnddf_output)
-# }
-# 
-# ggplot(data = grnd_pts %>%
-#          sample_frac(1) %>%
-#          mutate(zone = as.factor(zone)),
-#        mapping = aes(
-#          x = uas_z,
-#          y = dtm_z
-#        )) +
-#   geom_point() + 
-#   geom_smooth(method = 'lm', formula = y~x, color = 'firebrick') +
-#   geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
-#   stat_cor(label.y = 420) +
-#   stat_regline_equation(label.y = 400) +
-#   facet_wrap(~zone)
+if (!exists('grnd_pts')) {
+  grnd_pts <- read_csv(grnddf_output)
+}
+
+fig = ggplot(data = grnd_pts %>%
+         sample_frac(0.1) %>%
+         mutate(zone = as.factor(zone)),
+       mapping = aes(
+         y = uas_z,
+         x = dtm_z
+       )) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = y~x, color = 'firebrick') +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  stat_cor(label.y = 420) +
+  stat_regline_equation(label.y = 365) +
+  labs(
+    y = 'UAS ground points elevation (m)',
+    x = 'ALS DTM elevation (m)'
+  ) +
+  facet_wrap(~zone, 
+             ncol = 3) +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank()
+  )
+
+ggsave(filename = 'figures/no_icp_regression.png', 
+       plot = fig,
+       width = 6.5, height = 7.5, units = 'in', dpi = 700)
+
+rm(fig)
+
+# ====================== Height normalize by zone ======================
+
+dtm_norm <- function(zone, uas, dtm, grnddf, zone_shp, output) {
+  
+  library(lidR)
+  library(tidyverse)
+  library(glue)
+  library(sf)
+  
+  zone_shp <- read_sf(zone_shp) %>%
+    st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs'))
+  
+  grnd_pts <- read_csv(grnddf)
+  
+  if (zone %in% 6:7) {
+    las <- glue(uas, z = 67) %>%
+      readLAS(select = '') %>%
+      clip_roi(zone_shp %>%
+                 filter(Zone == zone))
+  } else {
+    las <- glue(uas, z = zone) %>%
+      readLAS(select = '') %>%
+      clip_roi(zone_shp %>%
+                 filter(Zone == zone))
+  }
+  
+  dtm <- glue(dtm, z = zone) %>%
+    raster()
+  
+  model <- lm(uas_z ~ als_z, 
+              data = grnd_pts %>%
+                filter(zone == zone))
+  
+  dtm <- dtm + model$coefficients[1]
+  
+  las <- normalize_height(las, dtm, na.rm = TRUE)
+  
+  writeLAS(las, glue(output, z = zone))
+  
+}
+
+cl <- makeCluster(11)
+
+parLapply(
+  cl,
+  zone,
+  dtm_norm,
+  uas = uas_file,
+  dtm = als_dtm,
+  grnddf = grnddf_output,
+  zone_shp = zone_shp_file,
+  output = hnorm_las_output
+)
+
+stopCluster(cl)
 
