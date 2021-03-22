@@ -43,7 +43,7 @@ library(parallel)
 # ================================= User inputs ================================
 
 uas_file <- 'data/las/uas/raw_pix4d/ppwd_uas_z{z}_f2_pix4d.las'
-spectral_file <-
+spec_file <-
   'data/las/uas/raw_pix4d/spectral/ppwd_uas_z{z}_f2_pix4d_{band}.tif'
 zone_shp_file <- 'data/site_data/zone_shp/ppwd_zones.shp'
 buffered_shp_file <- 'data/site_data/zone_shp/ppwd_zones_50m-buffer.shp'
@@ -58,53 +58,99 @@ ts_value <- 0.58
 ct_value <- 0.01
 n_value <- 0.55
 
-grndlas_output <-
+grnd_las_output <-
   'data/icp_free_analysis/ground_points/ppwd_uas_z{z}_f2_noicp_grndpts.las'
 
-grnddf_output <- 'data/icp_free_analysis/ground_points/ppwd_noicp_grndpts.csv'
+grnd_df_output <- 'data/icp_free_analysis/ground_points/ppwd_noicp_grndpts.csv'
 
 hnorm_las_output <- 'data/las/uas/ppwd_uas_z{z}_f2_noicp_hnrom-dtm.las'
 
 # =========================== Isolate ground points ============================
 
-grnd <- function(z, zone_shp, uas, dtm, grnddf, zone_shp, output) {
-  
-  library(lidR)
-  library(tidyverse)
-  library(glue)
-  library(sf)
-  
-  zone_shp <- read_sf(zone_shp) %>%
-    st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs')) %>%
-    filter(zone == z)
-  
-  if (zone %in% 6:7) {
-    las <- glue(uas, z = 67) %>%
-      readLAS(select = '') 
-    red <- glue(spectral_file, band = 'red', z = 67) %>%
-      raster()
-    nir <- glue(spectral_file, band = 'nir', z = 67) %>%
-      raster()
-  } else {
-    las <- glue(uas, z = zone) %>%
-      readLAS(select = '') 
-    red <- glue(spectral_file, band = 'red') %>%
-      raster()
-    nir <- glue(spectral_file, band = 'nir') %>%
-      raster()
-  }
+# grnd <- function(z, zone_shp, uas, ct_value, cr_value, r_value, ts_value, 
+#                  n_value, spectral_file, dtm, output) {
+#   
+#   library(lidR)
+#   library(tidyverse)
+#   library(glue)
+#   library(sf)
+#   
+#   zone_shp <- read_sf(zone_shp) %>%
+#     st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs')) %>%
+#     filter(Zone == z)
+#   
+#   if (z %in% 6:7) {
+#     las <- glue(uas, z = 67) %>%
+#       readLAS(select = '') 
+#     red <- glue(spectral_file, band = 'red', z = 67) %>%
+#       raster()
+#     nir <- glue(spectral_file, band = 'nir', z = 67) %>%
+#       raster()
+#   } else {
+#     las <- glue(uas, z = z) %>%
+#       readLAS(select = '') 
+#     red <- glue(spectral_file, band = 'red') %>%
+#       raster()
+#     nir <- glue(spectral_file, band = 'nir') %>%
+#       raster()
+#   }
+# 
+#   las <- las %>%
+#     clip_roi(zone_shp)
+#   
+#   ndvi <- (nir - red) / (nir + red)
+#   
+#   las <- las %>%
+#     filter_duplicates() %>%
+#     merge_spatial(source = ndvi,
+#                   attribute = 'NDVI')
+#   
+#   las <- classify_ground(
+#     las = las,
+#     algorithm = csf(
+#       class_threshold = ct_value,
+#       cloth_resolution = cr_value,
+#       rigidness = r_value,
+#       time_step = ts_value,
+#       iterations = 500L,
+#       sloop_smooth = FALSE
+#     ),
+#     last_returns = FALSE
+#   ) %>%
+#     filter_ground() %>%
+#     filter_poi(NDVI <= n_value)
+#   
+#   writeLAS(las, glue(output, z = z))
+#   
+# }
+# 
+# cl <- makeCluster(6)
+# 
+# z = zone
+# 
+# parLapply(
+#   cl,
+#   z,
+#   grnd,
+#   zone_shp = zone_shp_file,
+#   spectral_file = spec_file,
+#   uas = uas_file,
+#   dtm = als_dtm, 
+#   r_value <- 3,
+#   cr_value <- 0.45,
+#   ts_value <- 0.58,
+#   ct_value <- 0.01,
+#   n_value <- 0.55,
+#   output = grnd_las_output
+# )
+# 
+# stopCluster(cl)
 
-  las <- las %>%
-    clip_roi(zone_shop)
-  
-  writeLAS(las, glue(output, z = zone))
-  
-}
+
 zone_shp <- read_sf(zone_shp_file) %>%
   st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs'))
 
 for (z in zone) {
-  
   message('Processing zone ', z)
   
   if (z %in% 6:7) {
@@ -113,9 +159,9 @@ for (z in zone) {
       clip_roi(zone_shp %>%
                  filter(Zone == z))
     
-    red <- glue(spectral_file, band = 'red', z = 67) %>%
+    red <- glue(spec_file, band = 'red', z = 67) %>%
       raster()
-    nir <- glue(spectral_file, band = 'nir', z = 67) %>%
+    nir <- glue(spec_file, band = 'nir', z = 67) %>%
       raster()
     
   } else {
@@ -124,9 +170,9 @@ for (z in zone) {
       clip_roi(zone_shp %>%
                  filter(Zone == z))
     
-    red <- glue(spectral_file, band = 'red') %>%
+    red <- glue(spec_file, band = 'red') %>%
       raster()
-    nir <- glue(spectral_file, band = 'nir') %>%
+    nir <- glue(spec_file, band = 'nir') %>%
       raster()
     
   }
@@ -137,6 +183,13 @@ for (z in zone) {
     filter_duplicates() %>%
     merge_spatial(source = ndvi,
                   attribute = 'NDVI')
+  
+  
+  plot(decimate_points(las, random(1)), color = 'NDVI')
+  rgl::rgl.snapshot(glue('qc/', 
+                         str_extract(grnd_las_output, 'ppwd.+(?=.las)'), 
+                         '_spectral.png'))
+  rgl::rgl.close()
   
   las <- classify_ground(
     las = las,
@@ -153,12 +206,18 @@ for (z in zone) {
     filter_ground() %>%
     filter_poi(NDVI <= n_value)
   
-  writeLAS(las, glue(grndlas_output))
+  plot(decimate_points(las, random(1)), color = 'NDVI')
+  rgl::rgl.snapshot(glue('qc/', 
+                         str_extract(grnd_las_output, 'ppwd.+(?=.las)'), 
+                         '_grnd_pts.png'))
+  rgl::rgl.close()
+  
+  writeLAS(las, glue(grnd_las_output))
   
 }
-
-rm(ct_value, cr_value, r_value, ts_value, n_value, spectral_file, z, 
-   zone_shp_file, ndvi, nir, red)
+plot(decimate_points(las, random(1)), color = 'NDVI')
+rm(ct_value, cr_value, r_value, ts_value, n_value, spectral_file, 
+   zone_shp_file)
 
 # ========================== Generate ground dataset ===========================
 
@@ -173,7 +232,7 @@ buffered_shp <- read_sf(buffered_shp_file) %>%
 
 for (z in zone) {
   
-  las <- glue(grndlas_output) %>%
+  las <- glue(grnd_las_output) %>%
     readLAS(select = '') %>%
     clip_roi(buffered_shp %>%
                filter(Zone == z))
@@ -195,9 +254,9 @@ for (z in zone) {
   
 }
 
-write_csv(grnd_pts, grnddf_output)
+write_csv(grnd_pts, grnd_df_output)
 
-rm(buffered_shp_file, grndlas_output, las, dtm, buffered_shp)
+rm(buffered_shp_file, grnd_las_output, las, dtm, buffered_shp)
 gc()
 
 # ================================ ggplot theme ================================
@@ -221,24 +280,24 @@ theme_set(
 # ====================== Plot uas to als dtm relationship ====================== 
 
 if (!exists('grnd_pts')) {
-  grnd_pts <- read_csv(grnddf_output)
+  grnd_pts <- read_csv(grnd_df_output)
 }
 
 fig = ggplot(data = grnd_pts %>%
          sample_frac(0.1) %>%
          mutate(zone = as.factor(zone)),
        mapping = aes(
-         y = uas_z,
-         x = dtm_z
+         x = uas_z,
+         y = dtm_z
        )) +
   geom_point() +
   geom_smooth(method = 'lm', formula = y~x, color = 'firebrick') +
   geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
   stat_cor(label.y = 420) +
-  stat_regline_equation(label.y = 365) +
+  stat_regline_equation(label.y = 365) +#365) +
   labs(
-    y = 'UAS ground points elevation (m)',
-    x = 'ALS DTM elevation (m)'
+    x = 'UAS ground points elevation (m)',
+    y = 'ALS DTM elevation (m)'
   ) +
   facet_wrap(~zone, 
              ncol = 3) +
@@ -255,57 +314,134 @@ rm(fig)
 
 # ====================== Height normalize by zone ======================
 
-dtm_norm <- function(zone, uas, dtm, grnddf, zone_shp, output) {
+zone_shp <- read_sf(zone_shp_file) %>%
+  st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs'))
+
+if (!exists('grnd_pts')) {
+  grnd_pts <- read_csv(grnd_df_output)
+}
+
+for (z in zone) {
   
-  library(lidR)
-  library(tidyverse)
-  library(glue)
-  library(sf)
+  message('Processing zone ', z)
   
-  zone_shp <- read_sf(zone_shp) %>%
-    st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs'))
-  
-  grnd_pts <- read_csv(grnddf)
-  
-  if (zone %in% 6:7) {
-    las <- glue(uas, z = 67) %>%
+  if (z %in% 6:7) {
+    las <- glue(uas_file, z = 67) %>%
       readLAS(select = '') %>%
       clip_roi(zone_shp %>%
-                 filter(Zone == zone))
+                 filter(Zone == z))
   } else {
-    las <- glue(uas, z = zone) %>%
+    las <- glue(uas_file) %>%
       readLAS(select = '') %>%
       clip_roi(zone_shp %>%
-                 filter(Zone == zone))
+                 filter(Zone == z))
   }
+
+  als_las <- 'data/las/als/ppwd_als_z{z}_hnorm-als.las' %>%
+    glue() %>%
+    readLAS(select = '') %>%
+    decimate_points(random(1))
   
-  dtm <- glue(dtm, z = zone) %>%
+  dtm <- als_dtm %>%
+    glue() %>%
     raster()
   
-  model <- lm(uas_z ~ als_z, 
+  model <- lm(uas_z ~ dtm_z, 
               data = grnd_pts %>%
-                filter(zone == zone))
+                filter(zone == z))
   
   dtm <- dtm + model$coefficients[1]
   
   las <- normalize_height(las, dtm, na.rm = TRUE)
+
+  x = plot(las %>%
+             decimate_points(random(1)))
+  plot(als_las, add = x, colorPalette = 'white')
+  rgl::rgl.snapshot(glue(
+    'qc/',
+    str_extract(grnd_las_output, 'ppwd.+(?=.las)'),
+    '_hnorm.png'
+  ))
+  rgl::rgl.close()
   
-  writeLAS(las, glue(output, z = zone))
+  writeLAS(las, glue(hnorm_las_output))
   
 }
 
-cl <- makeCluster(11)
 
-parLapply(
-  cl,
-  zone,
-  dtm_norm,
-  uas = uas_file,
-  dtm = als_dtm,
-  grnddf = grnddf_output,
-  zone_shp = zone_shp_file,
-  output = hnorm_las_output
-)
 
-stopCluster(cl)
-
+# dtm_norm <- function(z, uas, dtm, grnddf, zone_shp, output) {
+#   
+#   library(lidR)
+#   library(tidyverse)
+#   library(glue)
+#   library(sf)
+#   
+#   zone_shp <- 'data/site_data/zone_shp/ppwd_zones.shp' %>%
+#     read_sf() %>%
+#     st_transform(crs('+proj=utm +zone=10 +datum=NAD83 +units=m +no_defs')) %>%
+#     filter(Zone == z)
+#   
+#   grnd_pts <- 'data/icp_free_analysis/ground_points/ppwd_noicp_grndpts.csv' %>%
+#     read_csv() %>%
+#     filter(zone == z)
+#   
+#   las <- 'data/las/uas/raw_pix4d/ppwd_uas_z{z}_f2_pix4d.las' %>%
+#     glue(z = z) %>%
+#     readLAS(select = '') %>%
+#     clip_roi(zone_shp)
+#   
+#   als_las <- 'data/las/als/ppwd_als_z{z}_hnorm-als.las' %>%
+#     glue(z = z) %>%
+#     readLAS(select = '') %>%
+#     decimate_points(random(1))
+#   
+#   dtm <- 'data/dtm/als/ppwd_als_z{z}_dtm.tif' %>%
+#     glue(z = z) %>%
+#     raster()
+#   
+#   # ==============================================================================
+#   # ============================== Analysis ======================================
+#   # ==============================================================================
+#   
+#   model <- lm(uas_z ~ dtm_z, data = grnd_pts)
+#   
+#   # ==============================================================================
+#   
+#   dtm <- dtm + model$coefficients[1]
+#   
+#   uas_las <- normalize_height(las, dtm, na.rm = TRUE)
+#   
+#   # ==============================================================================
+#   # ================================ Plot results ================================ 
+#   # ==============================================================================
+#   
+#   x = plot(uas_las  %>%
+#              decimate_points(random(1)))
+#   plot(als_las, add = x, colorPalette = 'white')
+#   rgl::rgl.snapshot(glue('qc/', 
+#                          str_extract(output, 'ppwd.+(?=.las)'), 
+#                          '_hnorm.png'))
+#   rgl::rgl.close()
+#   
+#   writeLAS(las, glue(output))
+#   
+# }
+# 
+# cl <- makeCluster(11)
+# 
+# z = c(2:4,8:13)
+# 
+# parLapply(
+#   cl,
+#   z,
+#   dtm_norm,
+#   uas = uas_file,
+#   dtm = als_dtm,
+#   grnddf = grnd_df_output,
+#   zone_shp = zone_shp_file,
+#   output = hnorm_las_output
+# )
+# 
+# stopCluster(cl)
+# 
